@@ -1,0 +1,12 @@
+.jelly-edge-base {
+  stroke: var(--text-secondary);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.jelly-edge-flow {
+  stroke: var(--color-accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px var(--color-accent));
+}

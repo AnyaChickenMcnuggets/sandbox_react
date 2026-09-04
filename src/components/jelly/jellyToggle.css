@@ -1,0 +1,89 @@
+.jelly-toggle-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.jelly-toggle-track {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: var(--jelly-radius-pill);
+  border: none;
+  background: var(--surface-muted);
+  box-shadow: var(--jelly-shadow-inset-bottom);
+  padding: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.jelly-toggle-track:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.jelly-toggle-on {
+  background: var(--color-queue);
+}
+
+.jelly-toggle-knob {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.25);
+  margin-left: 0;
+}
+
+.jelly-toggle-on .jelly-toggle-knob {
+  margin-left: 20px;
+}
+
+.jelly-toggle-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.jelly-segmented {
+  position: relative;
+  display: inline-flex;
+  padding: 4px;
+  background: var(--surface-muted);
+  border-radius: var(--jelly-radius-pill);
+  box-shadow: var(--jelly-shadow-inset-bottom);
+  gap: 2px;
+}
+
+.jelly-segmented-option {
+  position: relative;
+  border: none;
+  background: transparent;
+  padding: 8px 18px;
+  border-radius: var(--jelly-radius-pill);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.jelly-segmented-active {
+  position: absolute;
+  inset: 0;
+  background: var(--color-accent);
+  border-radius: var(--jelly-radius-pill);
+  box-shadow: var(--jelly-shadow-outer);
+  z-index: 0;
+}
+
+.jelly-segmented-label {
+  position: relative;
+  z-index: 1;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.jelly-segmented-option:has(.jelly-segmented-active) .jelly-segmented-label {
+  color: var(--text-inverse);
+}

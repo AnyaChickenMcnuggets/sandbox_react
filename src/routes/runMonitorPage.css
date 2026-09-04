@@ -1,0 +1,19 @@
+.run-monitor-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 90px);
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.run-monitor-body {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  min-height: 0;
+}
+
+.run-monitor-canvas {
+  flex: 1;
+  min-width: 0;
+}

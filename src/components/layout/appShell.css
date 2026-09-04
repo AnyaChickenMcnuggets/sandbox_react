@@ -1,0 +1,36 @@
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  padding: 20px 32px;
+}
+
+.app-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 900;
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.app-logo-blob {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--jelly-radius-pill);
+  background: var(--color-accent);
+  box-shadow: var(--jelly-shadow-outer);
+  font-size: 16px;
+}
+
+.app-main {
+  flex: 1;
+  padding: 0 32px 40px;
+}

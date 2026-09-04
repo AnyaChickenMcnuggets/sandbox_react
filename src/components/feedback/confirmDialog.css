@@ -1,0 +1,33 @@
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(20 12 8 / 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.confirm-panel {
+  width: 360px;
+  max-width: 90vw;
+}
+
+.confirm-title {
+  font-weight: 800;
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+
+.confirm-message {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

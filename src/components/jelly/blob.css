@@ -1,0 +1,37 @@
+.jelly-blob {
+  position: relative;
+  background: var(--surface);
+  box-shadow: var(--jelly-shadow-outer), var(--jelly-shadow-inset-bottom);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.jelly-blob-flat {
+  box-shadow: none;
+}
+
+.jelly-radius-sm {
+  border-radius: var(--jelly-radius-sm);
+}
+.jelly-radius-md {
+  border-radius: var(--jelly-radius-md);
+}
+.jelly-radius-lg {
+  border-radius: var(--jelly-radius-lg);
+}
+.jelly-radius-pill {
+  border-radius: var(--jelly-radius-pill);
+}
+
+.jelly-blob-highlight {
+  position: absolute;
+  inset: 0;
+  background: var(--jelly-highlight);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.jelly-blob-content {
+  position: relative;
+  z-index: 2;
+}

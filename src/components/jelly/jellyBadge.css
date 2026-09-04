@@ -1,0 +1,40 @@
+.jelly-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--jelly-radius-pill);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.jelly-badge-neutral {
+  background: var(--surface-muted);
+  color: var(--text-secondary);
+}
+.jelly-badge-job {
+  background: var(--color-job-soft);
+  color: var(--color-job-dark);
+}
+.jelly-badge-queue {
+  background: var(--color-queue-soft);
+  color: var(--color-queue-dark);
+}
+.jelly-badge-queueCheck {
+  background: var(--color-queue-check-soft);
+  color: var(--color-queue-check-dark);
+}
+.jelly-badge-danger {
+  background: color-mix(in srgb, var(--status-failed) 20%, transparent);
+  color: var(--status-failed-dark);
+}
+.jelly-badge-success {
+  background: color-mix(in srgb, var(--status-succeeded) 20%, transparent);
+  color: var(--status-succeeded-dark);
+}
+.jelly-badge-warning {
+  background: color-mix(in srgb, var(--status-running) 25%, transparent);
+  color: var(--status-running-dark);
+}

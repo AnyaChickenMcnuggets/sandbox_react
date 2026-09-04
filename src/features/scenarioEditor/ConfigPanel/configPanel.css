@@ -1,0 +1,27 @@
+.config-panel {
+  width: 320px;
+  flex-shrink: 0;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.config-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.config-panel-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+.config-panel-delete {
+  width: 100%;
+  margin-top: 8px;
+}

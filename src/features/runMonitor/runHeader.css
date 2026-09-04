@@ -1,0 +1,33 @@
+.run-header {
+  margin-bottom: 16px;
+}
+
+.run-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.run-header-title {
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.run-header-subtitle {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.run-header-status {
+  font-size: 13px;
+  padding: 6px 16px;
+}
+
+.run-header-timeline {
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 700;
+}

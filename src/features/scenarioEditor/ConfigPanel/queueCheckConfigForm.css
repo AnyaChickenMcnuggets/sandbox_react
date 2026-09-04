@@ -1,0 +1,29 @@
+.qc-key-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.qc-key-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.qc-key-remove {
+  border: none;
+  background: var(--surface-muted);
+  color: var(--danger);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.qc-expected-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}

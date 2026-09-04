@@ -1,0 +1,32 @@
+.scenario-graph-wrapper {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--jelly-radius-lg);
+  overflow: hidden;
+  background: var(--bg-canvas);
+  box-shadow: var(--jelly-shadow-inset-bottom);
+}
+
+.scenario-graph-bg {
+  background: var(--bg-canvas);
+}
+
+.react-flow__controls {
+  box-shadow: var(--jelly-shadow-outer);
+  border-radius: var(--jelly-radius-md);
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background: var(--surface);
+  border: none;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.react-flow__controls-button svg {
+  fill: var(--text-primary);
+}
+
+.react-flow__attribution {
+  display: none;
+}

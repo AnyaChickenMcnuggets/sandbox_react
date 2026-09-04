@@ -1,0 +1,27 @@
+.step-node-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--jelly-radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-inverse);
+}
+
+.step-node-badge-PENDING {
+  background: var(--status-pending);
+  color: var(--text-primary);
+}
+.step-node-badge-RUNNING {
+  background: var(--status-running);
+  color: #4a3200;
+}
+.step-node-badge-SUCCEEDED {
+  background: var(--status-succeeded);
+}
+.step-node-badge-FAILED {
+  background: var(--status-failed);
+}
+.step-node-badge-STOPPED {
+  background: var(--status-stopped);
+}
