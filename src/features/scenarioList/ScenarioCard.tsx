@@ -4,8 +4,10 @@ import type { ScenarioResponse } from "../../api/types";
 import { Blob } from "../../components/jelly/Blob";
 import { JellyButton } from "../../components/jelly/JellyButton";
 import { JellyBadge } from "../../components/jelly/JellyBadge";
+import { IconEdit, IconPlay, IconTrash, IconActivity } from "../../components/jelly/icons";
 import { formatDateTime } from "../../lib/dates";
 import { STEP_TYPE_LABELS } from "../../lib/runStatus";
+import { runHistory } from "../../lib/runHistory";
 import "./scenarioCard.css";
 
 interface ScenarioCardProps {
@@ -23,23 +25,21 @@ const TYPE_TONE: Record<string, "job" | "queue" | "queueCheck"> = {
 
 export function ScenarioCard({ scenario, onRun, onDelete, isStarting }: ScenarioCardProps) {
   const navigate = useNavigate();
+  const lastRun = runHistory.lastForScenario(scenario.id);
   const stepTypeCounts = scenario.steps.reduce<Record<string, number>>((acc, step) => {
     acc[step.type] = (acc[step.type] ?? 0) + 1;
     return acc;
   }, {});
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.02, y: -3 }}
-      transition={{ type: "spring", stiffness: 340, damping: 20 }}
-    >
-      <Blob radius="lg" className="scenario-card">
-        <div className="scenario-card-header" onClick={() => navigate(`/scenarios/${scenario.id}/edit`)}>
-          <h3 className="scenario-card-title">{scenario.name}</h3>
-          <p className="scenario-card-description">{scenario.description || "Без описания"}</p>
+    <motion.div layout whileHover={{ scale: 1.008, x: 4 }} transition={{ type: "spring", stiffness: 300, damping: 11 }}>
+      <Blob radius="md" className="scenario-row">
+        <div className="scenario-row-info" onClick={() => navigate(`/scenarios/${scenario.id}/edit`)}>
+          <div className="scenario-row-title">{scenario.name}</div>
+          <div className="scenario-row-description">{scenario.description || "Без описания"}</div>
         </div>
 
-        <div className="scenario-card-badges">
+        <div className="scenario-row-badges">
           {Object.entries(stepTypeCounts).map(([type, count]) => (
             <JellyBadge key={type} tone={TYPE_TONE[type] ?? "neutral"}>
               {STEP_TYPE_LABELS[type as keyof typeof STEP_TYPE_LABELS] ?? type} × {count}
@@ -47,17 +47,51 @@ export function ScenarioCard({ scenario, onRun, onDelete, isStarting }: Scenario
           ))}
         </div>
 
-        <div className="scenario-card-meta">Обновлён: {formatDateTime(scenario.updatedAt)}</div>
+        <div className="scenario-row-meta">Обновлён: {formatDateTime(scenario.updatedAt)}</div>
 
-        <div className="scenario-card-actions">
-          <JellyButton size="sm" variant="secondary" onClick={() => navigate(`/scenarios/${scenario.id}/edit`)}>
-            Редактировать
+        <div className="scenario-row-actions">
+          {lastRun ? (
+            <JellyButton
+              size="sm"
+              variant="ghost"
+              iconOnly
+              title={`Последний прогон #${lastRun.runId}`}
+              aria-label={`Последний прогон #${lastRun.runId}`}
+              onClick={() => navigate(`/runs/${lastRun.runId}`)}
+            >
+              <IconActivity />
+            </JellyButton>
+          ) : null}
+          <JellyButton
+            size="sm"
+            variant="secondary"
+            iconOnly
+            title="Редактировать"
+            aria-label="Редактировать"
+            onClick={() => navigate(`/scenarios/${scenario.id}/edit`)}
+          >
+            <IconEdit />
           </JellyButton>
-          <JellyButton size="sm" variant="primary" onClick={() => onRun(scenario)} disabled={isStarting}>
-            {isStarting ? "Запуск…" : "Запустить"}
+          <JellyButton
+            size="sm"
+            variant="primary"
+            iconOnly
+            title={isStarting ? "Запуск…" : "Запустить"}
+            aria-label={isStarting ? "Запуск…" : "Запустить"}
+            onClick={() => onRun(scenario)}
+            disabled={isStarting}
+          >
+            <IconPlay />
           </JellyButton>
-          <JellyButton size="sm" variant="ghost" onClick={() => onDelete(scenario)}>
-            Удалить
+          <JellyButton
+            size="sm"
+            variant="danger"
+            iconOnly
+            title="Удалить"
+            aria-label="Удалить"
+            onClick={() => onDelete(scenario)}
+          >
+            <IconTrash />
           </JellyButton>
         </div>
       </Blob>

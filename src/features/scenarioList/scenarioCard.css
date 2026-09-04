@@ -1,45 +1,50 @@
-.scenario-card {
+.scenario-row {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 22px;
-  height: 100%;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 20px;
 }
 
-.scenario-card-header {
+.scenario-row-info {
+  flex: 1 1 260px;
+  min-width: 0;
   cursor: pointer;
 }
 
-.scenario-card-title {
-  margin: 0 0 6px;
-  font-size: 18px;
+.scenario-row-title {
+  font-size: 16px;
   font-weight: 900;
-}
-
-.scenario-card-description {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-secondary);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.scenario-card-badges {
+.scenario-row-description {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scenario-row-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  flex: 0 1 auto;
 }
 
-.scenario-card-meta {
+.scenario-row-meta {
   font-size: 12px;
   color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.scenario-card-actions {
+.scenario-row-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
-  margin-top: auto;
-  padding-top: 6px;
+  flex-shrink: 0;
 }

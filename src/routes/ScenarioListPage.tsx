@@ -10,6 +10,7 @@ import { JellyButton } from "../components/jelly/JellyButton";
 import { ErrorBanner } from "../components/feedback/ErrorBanner";
 import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
 import { toastStore } from "../components/feedback/toastStore";
+import { runHistory } from "../lib/runHistory";
 import "./scenarioListPage.css";
 
 export function ScenarioListPage() {
@@ -23,7 +24,15 @@ export function ScenarioListPage() {
     startRun.mutate(
       { scenarioId: scenario.id },
       {
-        onSuccess: (run) => navigate(`/runs/${run.id}`),
+        onSuccess: (run) => {
+          runHistory.record({
+            runId: run.id,
+            scenarioId: scenario.id,
+            scenarioName: scenario.name,
+            startedAt: new Date().toISOString(),
+          });
+          navigate(`/runs/${run.id}`);
+        },
       },
     );
   }
@@ -58,7 +67,7 @@ export function ScenarioListPage() {
       ) : null}
 
       {scenarios && scenarios.length > 0 ? (
-        <motion.div layout className="scenario-list-grid">
+        <motion.div layout className="scenario-list-stack">
           {scenarios.map((scenario) => (
             <ScenarioCard
               key={scenario.id}

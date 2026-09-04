@@ -28,6 +28,16 @@
   padding: 12px 26px;
   font-size: 15px;
 }
+.jelly-button-icon {
+  padding: 0;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+}
+.jelly-button-icon.jelly-button-sm {
+  width: 32px;
+  height: 32px;
+}
 
 .jelly-button-primary {
   background-color: var(--color-accent);

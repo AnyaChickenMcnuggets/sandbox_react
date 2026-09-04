@@ -6,6 +6,7 @@ import { ToastViewport } from "./components/feedback/ToastProvider";
 import { ScenarioListPage } from "./routes/ScenarioListPage";
 import { ScenarioEditorPage } from "./routes/ScenarioEditorPage";
 import { RunMonitorPage } from "./routes/RunMonitorPage";
+import { RunsListPage } from "./routes/RunsListPage";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
             <Route path="/" element={<ScenarioListPage />} />
             <Route path="/scenarios/new" element={<ScenarioEditorPage />} />
             <Route path="/scenarios/:scenarioId/edit" element={<ScenarioEditorPage />} />
+            <Route path="/runs" element={<RunsListPage />} />
             <Route path="/runs/:runId" element={<RunMonitorPage />} />
           </Routes>
         </AppShell>

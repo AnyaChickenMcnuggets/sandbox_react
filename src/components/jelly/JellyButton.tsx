@@ -15,19 +15,30 @@ type NativeButtonProps = Omit<
 interface JellyButtonProps extends NativeButtonProps, Omit<HTMLMotionProps<"button">, keyof NativeButtonProps> {
   variant?: JellyButtonVariant;
   size?: "sm" | "md";
+  /** Круглая кнопка только с иконкой — обязательно передавать title/aria-label */
+  iconOnly?: boolean;
 }
 
 export const JellyButton = forwardRef<HTMLButtonElement, JellyButtonProps>(function JellyButton(
-  { variant = "primary", size = "md", className, children, disabled, ...rest },
+  { variant = "primary", size = "md", className, children, disabled, iconOnly, ...rest },
   ref,
 ) {
   return (
     <motion.button
       ref={ref}
-      className={clsx("jelly-button", `jelly-button-${variant}`, `jelly-button-${size}`, className)}
-      whileHover={disabled ? undefined : { scale: 1.045, y: -2 }}
-      whileTap={disabled ? undefined : { scale: 0.93, y: 0 }}
-      transition={{ type: "spring", stiffness: 420, damping: 15, mass: 0.6 }}
+      className={clsx(
+        "jelly-button",
+        `jelly-button-${variant}`,
+        `jelly-button-${size}`,
+        iconOnly && "jelly-button-icon",
+        className,
+      )}
+      // Резиновый эффект: hover — низкий damping даёт заметный перелёт/покачивание при возврате,
+      // tap — сплющивание (squash) по X/Y вместо равномерного scale, как у настоящего мармеладного
+      // мишки под пальцем; отпускание пружинит обратно с тем же "жидким" transition.
+      whileHover={disabled ? undefined : { scale: 1.08, y: -3, rotate: [0, -1.5, 1.5, 0] }}
+      whileTap={disabled ? undefined : { scaleX: 1.16, scaleY: 0.8, y: 1 }}
+      transition={{ type: "spring", stiffness: 260, damping: 9, mass: 0.7 }}
       disabled={disabled}
       {...rest}
     >

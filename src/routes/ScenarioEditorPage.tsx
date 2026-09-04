@@ -25,6 +25,7 @@ import { ConfigPanel } from "../features/scenarioEditor/ConfigPanel/ConfigPanel"
 import { ErrorBanner } from "../components/feedback/ErrorBanner";
 import { JellyButton } from "../components/jelly/JellyButton";
 import { toastStore } from "../components/feedback/toastStore";
+import { runHistory } from "../lib/runHistory";
 import "./scenarioEditorPage.css";
 
 export function ScenarioEditorPage() {
@@ -129,7 +130,17 @@ export function ScenarioEditorPage() {
     if (!scenarioId) return;
     startRun.mutate(
       { scenarioId },
-      { onSuccess: (run) => navigate(`/runs/${run.id}`) },
+      {
+        onSuccess: (run) => {
+          runHistory.record({
+            runId: run.id,
+            scenarioId,
+            scenarioName: name.trim() || `Сценарий #${scenarioId}`,
+            startedAt: new Date().toISOString(),
+          });
+          navigate(`/runs/${run.id}`);
+        },
+      },
     );
   }
 

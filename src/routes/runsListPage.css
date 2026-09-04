@@ -1,0 +1,32 @@
+.runs-list-page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.runs-list-toolbar {
+  margin-bottom: 24px;
+}
+
+.runs-list-toolbar h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.runs-list-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.runs-list-empty {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.runs-list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

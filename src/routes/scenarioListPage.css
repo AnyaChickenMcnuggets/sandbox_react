@@ -28,8 +28,8 @@
   color: var(--text-secondary);
 }
 
-.scenario-list-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+.scenario-list-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }

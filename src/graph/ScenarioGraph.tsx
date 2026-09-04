@@ -17,7 +17,15 @@ import { nodeTypes } from "./nodeTypes";
 import { edgeTypes } from "./edgeTypes";
 import type { StepNodeData } from "./types";
 import type { ScenarioStepType } from "../api/types";
+import { collisionBus } from "./collisionBus";
 import "./scenarioGraph.css";
+
+// Приблизительные габариты ноды (см. stepNode.css) — используются только для детекции сближения
+// при драге, не для лейаута, точность до пикселя тут не нужна.
+const NODE_WIDTH = 220;
+const NODE_HEIGHT = 110;
+const COLLISION_MARGIN = 24;
+const BUMP_COOLDOWN_MS = 450;
 
 export interface ScenarioGraphProps {
   mode: "edit" | "view";
@@ -43,6 +51,7 @@ function ScenarioGraphInner({
 }: ScenarioGraphProps) {
   const reactFlowInstance = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const lastBumpRef = useRef<Map<string, number>>(new Map());
 
   function handleDrop(event: React.DragEvent) {
     event.preventDefault();
@@ -50,6 +59,30 @@ function ScenarioGraphInner({
     if (!type || !onDropStepType) return;
     const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
     onDropStepType(type, position);
+  }
+
+  // "Коллизия" желейных нод: пока одна тащится, соседние в зоне сближения получают короткий
+  // импульс сжатия/отскока через collisionBus (см. StepNode) — с кулдауном на ноду, чтобы не
+  // дёргать анимацию на каждый кадр драга, пока ноды перекрываются.
+  function handleNodeDrag(_event: unknown, draggedNode: Node<StepNodeData>) {
+    const now = performance.now();
+    const draggedCenterX = draggedNode.position.x + NODE_WIDTH / 2;
+    const draggedCenterY = draggedNode.position.y + NODE_HEIGHT / 2;
+
+    for (const other of nodes) {
+      if (other.id === draggedNode.id) continue;
+      const otherCenterX = other.position.x + NODE_WIDTH / 2;
+      const otherCenterY = other.position.y + NODE_HEIGHT / 2;
+      const overlapping =
+        Math.abs(draggedCenterX - otherCenterX) < NODE_WIDTH + COLLISION_MARGIN &&
+        Math.abs(draggedCenterY - otherCenterY) < NODE_HEIGHT + COLLISION_MARGIN;
+      if (!overlapping) continue;
+
+      const lastBump = lastBumpRef.current.get(other.id) ?? 0;
+      if (now - lastBump < BUMP_COOLDOWN_MS) continue;
+      lastBumpRef.current.set(other.id, now);
+      collisionBus.bump(other.id);
+    }
   }
 
   const isEdit = mode === "edit";
@@ -64,6 +97,7 @@ function ScenarioGraphInner({
         onNodesChange={isEdit ? onNodesChange : undefined}
         onEdgesChange={isEdit ? onEdgesChange : undefined}
         onConnect={isEdit ? onConnect : undefined}
+        onNodeDrag={isEdit ? handleNodeDrag : undefined}
         nodesDraggable={isEdit}
         nodesConnectable={isEdit}
         elementsSelectable

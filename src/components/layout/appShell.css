@@ -6,6 +6,37 @@
 
 .app-header {
   padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-nav {
+  display: flex;
+  gap: 8px;
+}
+
+.app-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: var(--jelly-radius-pill);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  color: var(--text-secondary);
+  transition: color 0.15s ease;
+}
+
+.app-nav-link:hover {
+  color: var(--text-primary);
+}
+
+.app-nav-link-active {
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: var(--jelly-shadow-outer);
 }
 
 .app-logo {
