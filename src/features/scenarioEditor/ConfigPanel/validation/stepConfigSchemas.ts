@@ -36,6 +36,10 @@ export const queueFormSchema = z.object({
       metadata: z.array(z.object({ key: z.string(), value: z.string() })),
     }),
   ),
+  // UI-only — не уходит в ScenarioRequest (см. toConfig в QueueConfigForm), transactions выше
+  // остаётся единственным источником истины независимо от режима редактирования.
+  transactionsMode: z.enum(["list", "json"]),
+  transactionsJson: z.string(),
 });
 
 export type QueueFormValues = z.infer<typeof queueFormSchema>;

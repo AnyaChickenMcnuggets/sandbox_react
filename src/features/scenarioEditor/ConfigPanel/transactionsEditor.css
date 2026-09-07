@@ -1,0 +1,19 @@
+.transactions-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.transactions-json-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.transactions-json-textarea {
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 12px;
+  min-height: 220px;
+  white-space: pre;
+  overflow-x: auto;
+}

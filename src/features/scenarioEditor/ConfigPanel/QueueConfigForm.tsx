@@ -5,7 +5,8 @@ import type { QueueStepConfig } from "../../../api/types";
 import { JellyField } from "../../../components/jelly/JellyField";
 import { JellyInput, JellyTextarea } from "../../../components/jelly/JellyInput";
 import { queueFormSchema, type QueueFormValues } from "./validation/stepConfigSchemas";
-import { TransactionTemplateListEditor } from "./TransactionTemplateListEditor";
+import { TransactionsEditor } from "./TransactionsEditor";
+import { apiTransactionsToJson, transactionApiToFormItem, transactionFormItemToApi } from "./transactionMapping";
 
 interface QueueConfigFormProps {
   config: QueueStepConfig;
@@ -18,22 +19,10 @@ function toFormValues(config: QueueStepConfig): QueueFormValues {
     description: config.description,
     ttl: config.ttl,
     maxRetray: config.maxRetray,
-    transactions: (config.transactions ?? []).map((t) => ({
-      naturalKey: t.naturalKey,
-      valueText: typeof t.value === "string" ? t.value : JSON.stringify(t.value ?? null),
-      metadata: Object.entries(t.metadata ?? {}).map(([key, value]) => ({ key, value })),
-    })),
+    transactions: (config.transactions ?? []).map(transactionApiToFormItem),
+    transactionsMode: "list",
+    transactionsJson: apiTransactionsToJson(config.transactions),
   };
-}
-
-function parseValue(text: string): unknown {
-  const trimmed = text.trim();
-  if (trimmed === "") return "";
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return trimmed; // не валидный JSON — трактуем как обычную строку
-  }
 }
 
 function toConfig(values: QueueFormValues): QueueStepConfig {
@@ -42,17 +31,7 @@ function toConfig(values: QueueFormValues): QueueStepConfig {
     description: values.description?.trim() ? values.description : null,
     ttl: values.ttl,
     maxRetray: values.maxRetray,
-    transactions:
-      values.transactions.length > 0
-        ? values.transactions.map((t) => {
-            const metadata = t.metadata.filter((m) => m.key.trim() !== "");
-            return {
-              naturalKey: t.naturalKey,
-              value: parseValue(t.valueText),
-              metadata: metadata.length > 0 ? Object.fromEntries(metadata.map((m) => [m.key, m.value])) : null,
-            };
-          })
-        : null,
+    transactions: values.transactions.length > 0 ? values.transactions.map(transactionFormItemToApi) : null,
   };
 }
 
@@ -93,7 +72,7 @@ export function QueueConfigForm({ config, onChange }: QueueConfigFormProps) {
         </JellyField>
 
         <JellyField label="Тестовые транзакции" hint="Опционально — наполнить очередь при запуске">
-          <TransactionTemplateListEditor control={control} />
+          <TransactionsEditor control={control} />
         </JellyField>
       </div>
     </FormProvider>
