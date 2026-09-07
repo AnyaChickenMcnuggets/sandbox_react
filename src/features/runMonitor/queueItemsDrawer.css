@@ -6,6 +6,13 @@
   flex-direction: column;
 }
 
+@media (max-width: 880px) {
+  .queue-items-drawer {
+    width: 100%;
+    max-height: 60vh;
+  }
+}
+
 .queue-items-header {
   display: flex;
   justify-content: space-between;

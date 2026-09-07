@@ -1,5 +1,6 @@
 .app-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -8,14 +9,22 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 16px 32px;
+  padding: 16px clamp(16px, 3vw, 40px);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
   border-bottom: 1px solid var(--glass-border);
+}
+
+.app-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .app-nav {
@@ -34,6 +43,7 @@
   text-decoration: none;
   color: var(--text-secondary);
   transition: color 0.15s ease;
+  white-space: nowrap;
 }
 
 .app-nav-link:hover {
@@ -65,6 +75,7 @@
   justify-content: center;
   width: 34px;
   height: 34px;
+  flex-shrink: 0;
   border-radius: var(--jelly-radius-pill);
   background: color-mix(in srgb, var(--color-accent) var(--glass-tint-pct), transparent);
   backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
@@ -76,5 +87,36 @@
 
 .app-main {
   flex: 1;
-  padding: 0 32px 40px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(16px, 2.5vw, 32px) clamp(16px, 3vw, 40px) clamp(24px, 3vw, 40px);
+}
+
+/* Планшет/узкий десктоп — заголовку тесно, прячем текст логотипа, оставляем иконку-леденец */
+@media (max-width: 720px) {
+  .app-logo-text {
+    display: none;
+  }
+
+  .app-nav-link {
+    padding: 8px 12px;
+  }
+}
+
+/* Телефон — шапка в две строки без переполнения, никакого горизонтального скролла */
+@media (max-width: 480px) {
+  .app-header {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .app-header-right {
+    gap: 8px;
+  }
+
+  .app-nav-link {
+    font-size: 12px;
+    padding: 7px 10px;
+  }
 }

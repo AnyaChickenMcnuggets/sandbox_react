@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { nanoid } from "nanoid";
 import {
@@ -86,6 +86,61 @@ export function ScenarioEditorPage() {
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
+  // Копировать/вставить шаг — Ctrl/Cmd+C и Ctrl/Cmd+V на выбранной ноде. Буфер — обычный ref (не
+  // модульный стор): нужен только этой странице, не переживает переход на другой сценарий, и это
+  // осознанно, не хочется, чтобы скопированное в одном сценарии внезапно вставлялось в другом.
+  const clipboardRef = useRef<{ data: StepNodeData; position: { x: number; y: number } } | null>(null);
+  const pasteCountRef = useRef(0);
+  const nodesRef = useRef(nodes);
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+
+  useEffect(() => {
+    function isTypingTarget(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false;
+      return target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      if (isTypingTarget(event.target)) return; // не мешаем обычному копипасту текста в полях формы
+
+      const key = event.key.toLowerCase();
+      if (key === "c") {
+        if (!selectedNodeId) return;
+        const node = nodesRef.current.find((n) => n.id === selectedNodeId);
+        if (!node) return;
+        clipboardRef.current = { data: structuredClone(node.data), position: { ...node.position } };
+        pasteCountRef.current = 0;
+        toastStore.pushInfo(`Шаг «${node.data.name}» скопирован`);
+      } else if (key === "v") {
+        if (!clipboardRef.current) return;
+        event.preventDefault();
+        pasteCountRef.current += 1;
+        const offset = pasteCountRef.current * 32;
+        const localId = nanoid();
+        const copied = structuredClone(clipboardRef.current.data);
+        const newNode: Node<StepNodeData> = {
+          id: localId,
+          type: "step",
+          position: {
+            x: clipboardRef.current.position.x + offset,
+            y: clipboardRef.current.position.y + offset,
+          },
+          // stepId копировать нельзя — это ссылка на конкретный сохранённый шаг на бэкенде,
+          // вставленная нода становится новым шагом только со следующим save.
+          data: { ...copied, localId, stepId: undefined },
+        };
+        setNodes((nds) => [...nds, newNode]);
+        setSelectedNodeId(localId);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedNodeId, setNodes]);
+
   function updateSelectedNodeData(patch: Partial<StepNodeData>) {
     if (!selectedNodeId) return;
     setNodes((nds) => nds.map((n) => (n.id === selectedNodeId ? { ...n, data: { ...n.data, ...patch } } : n)));
@@ -162,7 +217,8 @@ export function ScenarioEditorPage() {
 
       <div className="editor-toolbar-row">
         <span className="editor-layout-hint">
-          Расположение блоков сохраняется локально в этом браузере · клик по связи + Backspace/Delete — удалить
+          Расположение блоков сохраняется локально в этом браузере · клик по связи + Backspace/Delete —
+          удалить · выбрать ноду + Ctrl/Cmd+C, Ctrl/Cmd+V — скопировать
         </span>
         {scenarioId ? (
           <JellyButton size="sm" variant="secondary" onClick={handleRun} disabled={startRun.isPending}>

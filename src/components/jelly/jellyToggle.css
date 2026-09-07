@@ -89,8 +89,21 @@
   font-size: 13px;
   font-weight: 800;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .jelly-segmented-option:has(.jelly-segmented-active) .jelly-segmented-label {
   color: var(--text-inverse);
+}
+
+/* Компактная разновидность — для групп из одних иконок (переключатель темы и т.п.), без большого
+   текстового паддинга. */
+.jelly-segmented-compact .jelly-segmented-option {
+  padding: 7px;
+}
+
+.jelly-segmented-compact .jelly-segmented-label svg {
+  display: block;
 }

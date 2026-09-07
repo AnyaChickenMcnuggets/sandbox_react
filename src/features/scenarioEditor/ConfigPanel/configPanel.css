@@ -1,5 +1,5 @@
 .config-panel {
-  width: 320px;
+  width: 340px;
   flex-shrink: 0;
   max-height: calc(100vh - 200px);
   overflow-y: auto;
@@ -24,4 +24,11 @@
 .config-panel-delete {
   width: 100%;
   margin-top: 8px;
+}
+
+@media (max-width: 880px) {
+  .config-panel {
+    width: 100%;
+    max-height: 70vh;
+  }
 }

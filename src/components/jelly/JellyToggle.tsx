@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import "./jellyToggle.css";
 
@@ -33,25 +33,31 @@ export function JellyToggle({ checked, onChange, label, disabled }: JellyToggleP
 
 interface SegmentOption<T extends string> {
   value: T;
-  label: string;
+  label: ReactNode;
+  /** Для иконок без текста — имя для скринридеров (по умолчанию берётся label, если он строка) */
+  ariaLabel?: string;
 }
 
 interface JellySegmentedProps<T extends string> {
   value: T;
   options: SegmentOption<T>[];
   onChange: (value: T) => void;
+  /** Уже поплотнее для групп из одних иконок (переключатель темы и т.п.) */
+  compact?: boolean;
 }
 
-export function JellySegmented<T extends string>({ value, options, onChange }: JellySegmentedProps<T>) {
+export function JellySegmented<T extends string>({ value, options, onChange, compact }: JellySegmentedProps<T>) {
   const layoutId = useId();
   return (
-    <div className="jelly-segmented">
+    <div className={`jelly-segmented${compact ? " jelly-segmented-compact" : ""}`}>
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
           className="jelly-segmented-option"
           onClick={() => onChange(option.value)}
+          aria-label={option.ariaLabel ?? (typeof option.label === "string" ? option.label : undefined)}
+          aria-pressed={option.value === value}
         >
           {option.value === value ? (
             <motion.span

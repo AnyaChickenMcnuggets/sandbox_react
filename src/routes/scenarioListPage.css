@@ -1,5 +1,9 @@
 .scenario-list-page {
-  max-width: 1280px;
+  /* На 24"/27"/34" мониторах узкая колонка в 1280px оставляет огромные пустые поля — расширяем
+     пропорционально ширине экрана, но не растягиваем строки бесконечно на действительно широких
+     панелях (min с vw-долей). */
+  max-width: min(2200px, 94vw);
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -7,7 +11,9 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
 }
 
 .scenario-list-toolbar h1 {
@@ -31,5 +37,11 @@
 .scenario-list-stack {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
+}
+
+@media (max-width: 480px) {
+  .scenario-list-toolbar h1 {
+    font-size: 22px;
+  }
 }

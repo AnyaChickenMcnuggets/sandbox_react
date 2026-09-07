@@ -1,6 +1,7 @@
 .scenario-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 18px;
   padding: 16px 20px;
 }
@@ -47,4 +48,28 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Телефон — точки роста (info/badges/meta/actions) переносятся строками одна под другой вместо
+   сжатия в кашу; info занимает всю первую строку, actions больше не выравниваются "справа", а
+   растягиваются по ширине для удобного тапа. */
+@media (max-width: 560px) {
+  .scenario-row {
+    gap: 10px;
+  }
+
+  .scenario-row-info {
+    flex-basis: 100%;
+  }
+
+  .scenario-row-meta {
+    order: 2;
+    flex: 1 1 auto;
+  }
+
+  .scenario-row-actions {
+    order: 3;
+    margin-left: 0;
+  }
 }
