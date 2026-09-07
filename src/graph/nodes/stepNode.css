@@ -3,7 +3,13 @@
   width: 220px;
   padding: 16px 18px;
   border-radius: var(--jelly-radius-lg);
-  box-shadow: var(--jelly-shadow-outer), var(--jelly-shadow-inset-bottom);
+  /* Микс мармелада и Liquid Glass: обычная желейная тень снизу-справа (объём) + цветное свечение
+     в тон типа шага (будто мармеладка светится изнутри) + внутренний "стеклянный" ободок сверху. */
+  box-shadow:
+    var(--jelly-shadow-outer),
+    var(--jelly-shadow-inset-bottom),
+    0 10px 26px -8px var(--step-node-glow, transparent),
+    inset 0 1px 1px rgb(255 255 255 / 0.5);
   /* Liquid Glass: цветное полупрозрачное "желе" с размытием того, что под ним (сетка холста
      просвечивает сквозь ноду) + диагональный стеклянный блик. Тон всё ещё насыщенный (82%) —
      JOB/QUEUE/QUEUE_CHECK остаются легко различимы по цвету, просто читаются как цветное стекло,
@@ -20,13 +26,42 @@
   gap: 8px;
 }
 
+/* Круглый глянцевый блик в углу — тот самый "мармеладный" акцент поверх плоского стеклянного
+   диагонального блика (background-image выше): без него плоский Liquid Glass читается только как
+   стекло, с ним — как выпуклая мармеладка под стеклянной глазурью. mix-blend-mode вместо чистой
+   непрозрачности — блик высветляет, а не перекрывает текст под собой. */
+.step-node::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse 60% 45% at 24% 18%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.18) 55%, transparent 75%);
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Только контент, НЕ хэндлы (у тех своя обязательная position:absolute от xyflow — общий селектор
+   вида ".step-node > *" перебил бы её при неудачном порядке импорта стилей и сломал бы точки
+   соединения рёбер). */
+.step-node-header,
+.step-node-name,
+.step-node-detail,
+.step-node-queue-hint {
+  position: relative;
+  z-index: 1;
+}
+
 .step-node-job {
+  --step-node-glow: color-mix(in srgb, var(--color-job) 55%, transparent);
   background-color: color-mix(in srgb, var(--color-job) var(--glass-tint-pct), transparent);
 }
 .step-node-queue {
+  --step-node-glow: color-mix(in srgb, var(--color-queue) 55%, transparent);
   background-color: color-mix(in srgb, var(--color-queue) var(--glass-tint-pct), transparent);
 }
 .step-node-queue-check {
+  --step-node-glow: color-mix(in srgb, var(--color-queue-check) 55%, transparent);
   background-color: color-mix(in srgb, var(--color-queue-check) var(--glass-tint-pct), transparent);
 }
 

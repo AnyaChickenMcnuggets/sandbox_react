@@ -1,12 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
-import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion, useAnimationControls } from "framer-motion";
 import clsx from "clsx";
 import type { StepNodeData } from "../types";
 import { STEP_TYPE_LABELS } from "../../lib/runStatus";
 import { StepNodeBadge } from "./StepNodeBadge";
 import { collisionBus } from "../collisionBus";
 import "./stepNode.css";
+
+type AnimationControls = ReturnType<typeof useAnimationControls>;
 
 const TYPE_CLASS: Record<StepNodeData["type"], string> = {
   JOB: "step-node-job",
@@ -22,138 +24,129 @@ const RUNTIME_CLASS: Record<string, string> = {
   STOPPED: "step-node-runtime-stopped",
 };
 
-// Чувствительность растяжения к скорости и потолок на само растяжение (clamp внутри useTransform
-// ниже — жёсткая аварийная граница на ВИДИМЫЙ scale, а не только на входные данные).
-const DRAG_STRETCH_SENSITIVITY = 5;
-const MAX_STRETCH = 0.22;
-const SAFE_MIN_SCALE = 0.6;
-const SAFE_MAX_SCALE = 1.5;
-// Сглаживание скорости (EMA) — сырая покадровая дельта позиции на медленном драге шумит на уровне
-// одного пикселя (квантование), из-за чего направление "дёргалось". Сглаженная скорость гасит этот
-// шум, оставаясь отзывчивой на быстрых рывках.
-const VELOCITY_SMOOTHING = 0.75;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
+interface RestingParams {
+  dragging: boolean;
+  pressed: boolean;
+  hovered: boolean;
+  runtimeStatus: string | undefined;
 }
 
-export function StepNode({
-  id,
-  data,
-  selected,
-  dragging,
-  positionAbsoluteX,
-  positionAbsoluteY,
-}: NodeProps<Node<StepNodeData>>) {
+// Единственный источник анимации ноды — приоритет состояний сверху вниз. Раньше hover/tap были
+// декларативными пропами framer-motion (whileHover/whileTap) — своя, отдельная от этой, жестовая
+// система. framer сам слушает pointerdown/enter/leave НЕЗАВИСИМО от d3-drag (на котором построен
+// драг в xyflow), и на границе dragging=false→true (первые пиксели движения, пока d3-drag ещё не
+// объявил жест драгом) framer успевал запустить whileTap; когда dragging после этого становился
+// true и whileTap-проп исчезал, framer не всегда корректно "отпускал" уже запущенную tap-анимацию
+// — нода залипала в её промежуточном значении (scaleX:1.1/scaleY:0.88 — ровно как у whileTap)
+// навсегда. Фикс — hover/press теперь просто React state (onMouseEnter/Leave,
+// onPointerDown/Up/Cancel), а единственный, кто вообще трогает transform, — этот controls-эффект.
+function restingAnimation({ dragging, pressed, hovered, runtimeStatus }: RestingParams) {
+  if (dragging) {
+    return {
+      target: { scale: [1, 1.07, 0.95, 1.04, 0.98, 1], rotate: [0, -2.5, 2.5, -1.5, 1, 0], y: 0 },
+      transition: { duration: 0.9, repeat: Infinity, ease: "easeInOut" as const },
+    };
+  }
+  if (pressed) {
+    return {
+      target: { scaleX: 1.1, scaleY: 0.88, scale: 1, rotate: 0, y: 1 },
+      transition: { type: "spring" as const, stiffness: 500, damping: 22 },
+    };
+  }
+  if (runtimeStatus === "RUNNING") {
+    return {
+      target: { scale: [1, 1.02, 1], scaleX: 1, scaleY: 1, rotate: 0, y: 0 },
+      transition: { duration: 1.6, repeat: Infinity, ease: "easeInOut" as const },
+    };
+  }
+  if (hovered) {
+    return {
+      target: { scale: 1.06, scaleX: 1, scaleY: 1, rotate: 0, y: -4 },
+      transition: { type: "spring" as const, stiffness: 300, damping: 15 },
+    };
+  }
+  return {
+    target: { scale: 1, scaleX: 1, scaleY: 1, rotate: 0, y: 0 },
+    transition: { type: "spring" as const, stiffness: 260, damping: 14, mass: 0.8 },
+  };
+}
+
+function playResting(controls: AnimationControls, params: RestingParams) {
+  const { target, transition } = restingAnimation(params);
+  controls.start({ ...target, transition });
+}
+
+export function StepNode({ id, data, selected, dragging }: NodeProps<Node<StepNodeData>>) {
   const { type, name, runtime } = data;
   const isViewMode = runtime !== undefined;
   const hasQueueAudit = runtime?.orchestratorQueueId != null;
+  const controls = useAnimationControls();
+  const [hovered, setHovered] = useState(false);
+  const [pressed, setPressed] = useState(false);
 
-  // Инерция при драге — без поворотов (комбинация rotate+non-uniform-scale в двух вложенных слоях
-  // и правда сломала себя раньше: после отпускания нода иногда оставалась расплющенной). Вместо
-  // этого — растяжение по осям напрямую: bias ∈ [-1..1] показывает, какая ось доминирует в
-  // сглаженной скорости, stretchMag — общая величина. Обе оси всегда двигаются НАВСТРЕЧУ друг
-  // другу (одна растягивается настолько же, насколько другая сжимается), поэтому итоговый scale
-  // никогда не уходит в ноль/отрицательные значения арифметически, а useTransform дополнительно
-  // жёстко клампит видимое значение на случай любого перелёта пружины осседания.
-  const rawScaleX = useMotionValue(1);
-  const rawScaleY = useMotionValue(1);
-  const scaleX = useTransform(rawScaleX, (v) => clamp(v, SAFE_MIN_SCALE, SAFE_MAX_SCALE));
-  const scaleY = useTransform(rawScaleY, (v) => clamp(v, SAFE_MIN_SCALE, SAFE_MAX_SCALE));
-
-  const prevRef = useRef<{ x: number; y: number; t: number } | null>(null);
-  const velocityRef = useRef({ vx: 0, vy: 0 });
-  const wasDraggingRef = useRef(false);
-
+  // Единственный источник "покоящейся" анимации — эффект зависит только от простых булевых/строковых
+  // значений, не от позиции/скорости — гарантированно детерминирован.
   useEffect(() => {
-    const now = performance.now();
-    const prev = prevRef.current;
+    playResting(controls, { dragging, pressed, hovered, runtimeStatus: runtime?.status });
+  }, [controls, dragging, pressed, hovered, runtime?.status]);
 
-    if (dragging && prev) {
-      const dt = Math.max(now - prev.t, 8);
-      const rawVx = (positionAbsoluteX - prev.x) / dt;
-      const rawVy = (positionAbsoluteY - prev.y) / dt;
-      const v = velocityRef.current;
-      v.vx = v.vx * VELOCITY_SMOOTHING + rawVx * (1 - VELOCITY_SMOOTHING);
-      v.vy = v.vy * VELOCITY_SMOOTHING + rawVy * (1 - VELOCITY_SMOOTHING);
+  // Отпускание мыши/пальца ГДЕ УГОДНО на странице (не только над нодой) обязано снимать pressed —
+  // иначе жест, начавшийся на ноде и завершившийся за её пределами, оставит "нажатое" состояние.
+  useEffect(() => {
+    if (!pressed) return;
+    const clear = () => setPressed(false);
+    window.addEventListener("pointerup", clear);
+    window.addEventListener("pointercancel", clear);
+    return () => {
+      window.removeEventListener("pointerup", clear);
+      window.removeEventListener("pointercancel", clear);
+    };
+  }, [pressed]);
 
-      const absVx = Math.abs(v.vx);
-      const absVy = Math.abs(v.vy);
-      const speed = Math.hypot(v.vx, v.vy);
-      // Домножаем на magnitude (stretchMag), которая сама мала на медленной скорости — остаточный
-      // шум в bias (неизбежный при почти нулевой скорости) гасится этим множителем, а не остаётся
-      // видимым дёрганьем.
-      const stretchMag = clamp(speed * DRAG_STRETCH_SENSITIVITY, 0, MAX_STRETCH);
-      const bias = (absVx - absVy) / (absVx + absVy + 0.001); // -1 (вертикаль) .. 1 (горизонталь)
-
-      rawScaleX.set(1 + stretchMag * bias);
-      rawScaleY.set(1 - stretchMag * bias);
-      wasDraggingRef.current = true;
-    } else if (wasDraggingRef.current) {
-      animate(rawScaleX, 1, { type: "spring", stiffness: 260, damping: 16, mass: 0.7 });
-      animate(rawScaleY, 1, { type: "spring", stiffness: 260, damping: 16, mass: 0.7 });
-      velocityRef.current = { vx: 0, vy: 0 };
-      wasDraggingRef.current = false;
-    }
-    prevRef.current = { x: positionAbsoluteX, y: positionAbsoluteY, t: now };
-  }, [dragging, positionAbsoluteX, positionAbsoluteY, rawScaleX, rawScaleY]);
-
-  // Коллизия с соседней нодой (см. ScenarioGraph.handleNodeDrag) — короткий импульс сжатия/отскока
-  // на этих же motion values, будто соседний желейный блок толкнули.
+  // Коллизия с соседней нодой (см. ScenarioGraph.handleNodeDrag) — короткий одноразовый импульс
+  // поверх текущей "покоящейся" анимации, после которого явно возвращаемся к ней же (а не оставляем
+  // повисшим one-off состоянием).
   useEffect(() => {
     return collisionBus.subscribe(id, () => {
-      animate(rawScaleX, [1, 1 - MAX_STRETCH * 1.3, 1 + MAX_STRETCH * 0.6, 1], { duration: 0.45, ease: "easeOut" });
-      animate(rawScaleY, [1, 1 + MAX_STRETCH * 1.3, 1 - MAX_STRETCH * 0.6, 1], { duration: 0.45, ease: "easeOut" });
+      controls
+        .start({ scale: [1, 0.85, 1.12, 0.96, 1], transition: { duration: 0.45, ease: "easeOut" } })
+        .then(() => playResting(controls, { dragging, pressed, hovered, runtimeStatus: runtime?.status }));
     });
-  }, [id, rawScaleX, rawScaleY]);
+  }, [id, controls, dragging, pressed, hovered, runtime?.status]);
 
   return (
-    <motion.div style={{ scaleX, scaleY }}>
-      <motion.div
-        className={clsx(
-          "step-node",
-          TYPE_CLASS[type],
-          runtime && RUNTIME_CLASS[runtime.status],
-          selected && "step-node-selected",
-          hasQueueAudit && "step-node-clickable",
-        )}
-        // whileHover/whileTap иначе остаются "прилипшими" на всю длительность драга (framer
-        // ловит pointerdown/hover независимо от собственной drag-системы xyflow) и накладываются
-        // поверх stretch/scaleX/scaleY выше — это и было источником "странной" тряски при
-        // перетаскивании. Отключаем их, пока xyflow реально тащит ноду.
-        whileHover={dragging ? undefined : { scale: 1.06, y: -4 }}
-        whileTap={dragging ? undefined : { scaleX: 1.1, scaleY: 0.88, y: 1 }}
-        animate={
-          runtime?.status === "RUNNING"
-            ? { scale: [1, 1.02, 1] }
-            : { scale: 1 }
-        }
-        transition={
-          runtime?.status === "RUNNING"
-            ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
-            : { type: "spring", stiffness: 260, damping: 10, mass: 0.8 }
-        }
-      >
-        <Handle type="target" position={Position.Left} />
-        <div className="step-node-header">
-          <span className="step-node-type-label">{STEP_TYPE_LABELS[type]}</span>
-          {runtime ? <StepNodeBadge status={runtime.status} /> : null}
+    <motion.div
+      className={clsx(
+        "step-node",
+        TYPE_CLASS[type],
+        runtime && RUNTIME_CLASS[runtime.status],
+        selected && "step-node-selected",
+        hasQueueAudit && "step-node-clickable",
+      )}
+      animate={controls}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onPointerDown={() => setPressed(true)}
+    >
+      <Handle type="target" position={Position.Left} />
+      <div className="step-node-header">
+        <span className="step-node-type-label">{STEP_TYPE_LABELS[type]}</span>
+        {runtime ? <StepNodeBadge status={runtime.status} /> : null}
+      </div>
+      <div className="step-node-name">{name}</div>
+      {isViewMode ? (
+        <div className="step-node-detail">
+          {runtime.errorMessage ? (
+            <span className="step-node-error">{runtime.errorMessage}</span>
+          ) : runtime.detail ? (
+            <span>{runtime.detail}</span>
+          ) : (
+            <span className="step-node-detail-empty">—</span>
+          )}
         </div>
-        <div className="step-node-name">{name}</div>
-        {isViewMode ? (
-          <div className="step-node-detail">
-            {runtime.errorMessage ? (
-              <span className="step-node-error">{runtime.errorMessage}</span>
-            ) : runtime.detail ? (
-              <span>{runtime.detail}</span>
-            ) : (
-              <span className="step-node-detail-empty">—</span>
-            )}
-          </div>
-        ) : null}
-        {hasQueueAudit ? <div className="step-node-queue-hint">Клик — транзакции очереди</div> : null}
-        <Handle type="source" position={Position.Right} />
-      </motion.div>
+      ) : null}
+      {hasQueueAudit ? <div className="step-node-queue-hint">Клик — транзакции очереди</div> : null}
+      <Handle type="source" position={Position.Right} />
     </motion.div>
   );
 }

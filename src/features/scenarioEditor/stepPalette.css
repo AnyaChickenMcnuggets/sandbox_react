@@ -30,14 +30,33 @@
 }
 
 .step-palette-item {
+  position: relative;
   padding: 14px;
   border-radius: var(--jelly-radius-md);
   color: var(--text-inverse);
-  box-shadow: var(--jelly-shadow-outer);
+  box-shadow: var(--jelly-shadow-outer), inset 0 1px 1px rgb(255 255 255 / 0.5);
   background-image: var(--glass-shine);
   backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
   -webkit-backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
   border: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+
+/* Тот же "мармеладный" глянцевый блик поверх стекла, что и у нод холста — палитра должна читаться
+   как те же объекты, просто ещё не размещённые. */
+.step-palette-item::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 45% at 24% 18%, rgb(255 255 255 / 0.8), rgb(255 255 255 / 0.18) 55%, transparent 75%);
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.step-palette-item-label,
+.step-palette-item-desc {
+  position: relative;
+  z-index: 1;
 }
 
 .step-palette-item-job {
