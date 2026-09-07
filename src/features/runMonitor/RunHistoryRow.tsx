@@ -26,7 +26,7 @@ export function RunHistoryRow({ entry }: RunHistoryRowProps) {
 
   return (
     <motion.div layout whileHover={{ scale: 1.012, x: 4 }} transition={{ type: "spring", stiffness: 300, damping: 11 }}>
-      <Blob radius="md" className="run-history-row" onClick={() => navigate(`/runs/${entry.runId}`)}>
+      <Blob radius="md" glass className="run-history-row" onClick={() => navigate(`/runs/${entry.runId}`)}>
         <div className="run-history-row-main">
           <div className="run-history-row-title">{entry.scenarioName}</div>
           <div className="run-history-row-meta">

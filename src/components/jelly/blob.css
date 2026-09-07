@@ -10,6 +10,19 @@
   box-shadow: none;
 }
 
+/* Liquid Glass: полупрозрачная подложка + размытие того, что за ней, + яркий стеклянный ободок.
+   Используется для "хромовых" панелей поверх холста/фона, не для цветных нод-желеек. */
+.jelly-blob-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.7);
+  border: 1px solid var(--glass-border);
+}
+
+.jelly-blob-glass > .jelly-blob-highlight {
+  background: var(--glass-shine);
+}
+
 .jelly-radius-sm {
   border-radius: var(--jelly-radius-sm);
 }

@@ -3,6 +3,8 @@ import { Blob, type BlobProps } from "./Blob";
 
 type JellyPanelProps = BlobProps;
 
-export function JellyPanel({ radius = "lg", className, ...rest }: JellyPanelProps) {
-  return <Blob radius={radius} className={clsx("jelly-panel", className)} {...rest} />;
+// Панели — "хромовые" поверхности (плавают над холстом/списком), поэтому Liquid Glass включён
+// по умолчанию; передайте glass={false} явно, если нужен сплошной непрозрачный фон.
+export function JellyPanel({ radius = "lg", glass = true, className, ...rest }: JellyPanelProps) {
+  return <Blob radius={radius} glass={glass} className={clsx("jelly-panel", className)} {...rest} />;
 }

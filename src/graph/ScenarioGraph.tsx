@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -52,6 +52,7 @@ function ScenarioGraphInner({
   const reactFlowInstance = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const lastBumpRef = useRef<Map<string, number>>(new Map());
+  const [draggingNodeId, setDraggingNodeId] = useState<string | null>(null);
 
   function handleDrop(event: React.DragEvent) {
     event.preventDefault();
@@ -62,8 +63,8 @@ function ScenarioGraphInner({
   }
 
   // "Коллизия" желейных нод: пока одна тащится, соседние в зоне сближения получают короткий
-  // импульс сжатия/отскока через collisionBus (см. StepNode) — с кулдауном на ноду, чтобы не
-  // дёргать анимацию на каждый кадр драга, пока ноды перекрываются.
+  // направленный импульс сжатия/отскока через collisionBus (см. StepNode) — с кулдауном на ноду,
+  // чтобы не дёргать анимацию на каждый кадр драга, пока ноды перекрываются.
   function handleNodeDrag(_event: unknown, draggedNode: Node<StepNodeData>) {
     const now = performance.now();
     const draggedCenterX = draggedNode.position.x + NODE_WIDTH / 2;
@@ -81,23 +82,37 @@ function ScenarioGraphInner({
       const lastBump = lastBumpRef.current.get(other.id) ?? 0;
       if (now - lastBump < BUMP_COOLDOWN_MS) continue;
       lastBumpRef.current.set(other.id, now);
-      collisionBus.bump(other.id);
+      const pushAngle = (Math.atan2(otherCenterY - draggedCenterY, otherCenterX - draggedCenterX) * 180) / Math.PI;
+      collisionBus.bump(other.id, pushAngle);
     }
   }
 
   const isEdit = mode === "edit";
 
+  // Рёбра, инцидентные перетаскиваемой ноде, получают data.nodeDragging — JellyEdge реагирует
+  // на это как на натянутую резинку (см. jellyEdge.css), а не просто рисует статичную линию.
+  const edgesWithDragState =
+    isEdit && draggingNodeId
+      ? edges.map((edge) =>
+          edge.source === draggingNodeId || edge.target === draggingNodeId
+            ? { ...edge, data: { ...edge.data, nodeDragging: true } }
+            : edge,
+        )
+      : edges;
+
   return (
     <div className="scenario-graph-wrapper" ref={wrapperRef} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
       <ReactFlow<Node<StepNodeData>>
         nodes={nodes}
-        edges={edges}
+        edges={edgesWithDragState}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={isEdit ? onNodesChange : undefined}
         onEdgesChange={isEdit ? onEdgesChange : undefined}
         onConnect={isEdit ? onConnect : undefined}
+        onNodeDragStart={isEdit ? (_, node) => setDraggingNodeId(node.id) : undefined}
         onNodeDrag={isEdit ? handleNodeDrag : undefined}
+        onNodeDragStop={isEdit ? () => setDraggingNodeId(null) : undefined}
         nodesDraggable={isEdit}
         nodesConnectable={isEdit}
         elementsSelectable

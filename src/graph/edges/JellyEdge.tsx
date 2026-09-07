@@ -1,6 +1,12 @@
 import { BaseEdge, getBezierPath, type EdgeProps } from "@xyflow/react";
 import { motion } from "framer-motion";
+import clsx from "clsx";
 import "./jellyEdge.css";
+
+interface JellyEdgeData {
+  animated?: boolean;
+  nodeDragging?: boolean;
+}
 
 export function JellyEdge({
   id,
@@ -14,11 +20,18 @@ export function JellyEdge({
   data,
 }: EdgeProps) {
   const [path] = getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
-  const animated = Boolean((data as { animated?: boolean } | undefined)?.animated);
+  const edgeData = data as JellyEdgeData | undefined;
+  const animated = Boolean(edgeData?.animated);
+  const tense = Boolean(edgeData?.nodeDragging);
 
   return (
     <>
-      <BaseEdge id={id} path={path} markerEnd={markerEnd} className="jelly-edge-base" />
+      <BaseEdge
+        id={id}
+        path={path}
+        markerEnd={markerEnd}
+        className={clsx("jelly-edge-base", tense && "jelly-edge-tense")}
+      />
       {animated ? (
         <motion.path
           d={path}

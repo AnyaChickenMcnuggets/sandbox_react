@@ -1,7 +1,49 @@
+@keyframes jelly-edge-breathe {
+  0%,
+  100% {
+    stroke-width: 3;
+  }
+  50% {
+    stroke-width: 3.7;
+  }
+}
+
+@keyframes jelly-edge-tense-pulse {
+  0%,
+  100% {
+    stroke-width: 4;
+  }
+  50% {
+    stroke-width: 5.6;
+  }
+}
+
 .jelly-edge-base {
   stroke: var(--text-secondary);
   stroke-width: 3;
   stroke-linecap: round;
+  animation: jelly-edge-breathe 3.2s ease-in-out infinite;
+  transition: stroke 0.2s ease, filter 0.2s ease;
+}
+
+/* Реактивность на курсор — xyflow оборачивает ребро (вместе с широкой невидимой зоной клика)
+   в <g class="react-flow__edge">, наводка на неё ловится обычным CSS :hover. */
+.react-flow__edge:hover .jelly-edge-base {
+  stroke: var(--color-accent-dark);
+  filter: drop-shadow(0 0 5px var(--color-accent));
+}
+
+.react-flow__edge.selected .jelly-edge-base {
+  stroke: var(--color-accent);
+  stroke-width: 4;
+}
+
+/* Ребро, один из концов которого сейчас тащат мышью — "натянутая резинка": быстрее пульсирует,
+   светится акцентным цветом, будто желейная связь между блоками ожила. */
+.jelly-edge-base.jelly-edge-tense {
+  stroke: var(--color-accent);
+  filter: drop-shadow(0 0 6px var(--color-accent));
+  animation: jelly-edge-tense-pulse 0.5s ease-in-out infinite;
 }
 
 .jelly-edge-flow {

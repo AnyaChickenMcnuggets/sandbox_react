@@ -33,7 +33,7 @@ export function ScenarioCard({ scenario, onRun, onDelete, isStarting }: Scenario
 
   return (
     <motion.div layout whileHover={{ scale: 1.008, x: 4 }} transition={{ type: "spring", stiffness: 300, damping: 11 }}>
-      <Blob radius="md" className="scenario-row">
+      <Blob radius="md" glass className="scenario-row">
         <div className="scenario-row-info" onClick={() => navigate(`/scenarios/${scenario.id}/edit`)}>
           <div className="scenario-row-title">{scenario.name}</div>
           <div className="scenario-row-description">{scenario.description || "Без описания"}</div>

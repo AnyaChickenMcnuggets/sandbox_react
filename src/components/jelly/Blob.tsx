@@ -8,16 +8,25 @@ export interface BlobProps extends HTMLAttributes<HTMLDivElement> {
   radius?: BlobRadius;
   tint?: string;
   flat?: boolean;
+  /** Liquid Glass — полупрозрачная подложка с backdrop-blur вместо сплошного --surface.
+   *  Для "хромовых" поверхностей (панели, строки списков), не для цветных нод/кнопок. */
+  glass?: boolean;
 }
 
 export const Blob = forwardRef<HTMLDivElement, BlobProps>(function Blob(
-  { radius = "md", tint, flat = false, className, style, children, ...rest },
+  { radius = "md", tint, flat = false, glass = false, className, style, children, ...rest },
   ref,
 ) {
   return (
     <div
       ref={ref}
-      className={clsx("jelly-blob", `jelly-radius-${radius}`, flat && "jelly-blob-flat", className)}
+      className={clsx(
+        "jelly-blob",
+        `jelly-radius-${radius}`,
+        flat && "jelly-blob-flat",
+        glass && "jelly-blob-glass",
+        className,
+      )}
       style={{ ...(tint ? { background: tint } : undefined), ...style }}
       {...rest}
     >
