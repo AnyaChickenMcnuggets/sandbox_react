@@ -1,8 +1,28 @@
+/* Обёртка — реальный flex-элемент editor-body: растягивается по высоте строки (align-items:stretch
+   по умолчанию), сама панель внутри уже просто заполняет эту высоту через flex:1. Без этой обёртки
+   .config-panel не мог опереться на "height:100%" от анонимного div-обёртки. */
+.config-panel-wrap {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-height: 0;
+}
+
+/* Высота — от родителя (editor-body), а не calc(100vh - N): захардкоженный вычет из вьюпорта не
+   учитывал реальную высоту строки (шапка/тулбар могут занимать разную высоту), поэтому длинный
+   контент панели (например, развёрнутый JSON-режим транзакций) мог вылезти за пределы .editor-body,
+   у которого нет своего overflow — итог: прокручивалась вся страница вместо самой панели. flex:1 +
+   min-height:0 держат прокрутку внутри панели независимо от того, что происходит выше по разметке.
+   Ширина — resize:horizontal, тот же приём, что и у .jelly-textarea (resize:vertical) для JSON-поля
+   транзакций ниже: перетаскиваемый угол вместо самодельного JS-драга. */
 .config-panel {
   width: 340px;
-  flex-shrink: 0;
-  max-height: calc(100vh - 200px);
+  min-width: 280px;
+  max-width: 640px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  resize: horizontal;
 }
 
 .config-panel-header {
@@ -27,8 +47,18 @@
 }
 
 @media (max-width: 880px) {
+  /* Мобильная раскладка складывает editor-body в столбец — панель уже не делит высоту строки с
+     холстом, поэтому фиксированный vh-кап + собственный скролл тут уместны (в отличие от десктопа
+     выше), а resize по ширине не имеет смысла на полноширинной панели. */
+  .config-panel-wrap {
+    width: 100%;
+  }
+
   .config-panel {
     width: 100%;
+    max-width: none;
+    flex: none;
     max-height: 70vh;
+    resize: none;
   }
 }

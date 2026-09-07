@@ -5,6 +5,7 @@ export interface StepRuntimeOverlay {
   detail: string | null;
   errorMessage: string | null;
   orchestratorQueueId: string | null;
+  orchestratorQueueOwned: boolean;
   orchestratorAssignmentId: number | null;
   startedAt: string | null;
   finishedAt: string | null;

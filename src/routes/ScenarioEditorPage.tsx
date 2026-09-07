@@ -23,6 +23,7 @@ import { EditorHeader } from "../features/scenarioEditor/EditorHeader";
 import { StepPalette } from "../features/scenarioEditor/StepPalette";
 import { ConfigPanel } from "../features/scenarioEditor/ConfigPanel/ConfigPanel";
 import { ErrorBanner } from "../components/feedback/ErrorBanner";
+import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
 import { JellyButton } from "../components/jelly/JellyButton";
 import { toastStore } from "../components/feedback/toastStore";
 import { runHistory } from "../lib/runHistory";
@@ -181,10 +182,10 @@ export function ScenarioEditorPage() {
     });
   }
 
-  function handleRun() {
+  function handleRun(startStepId?: number) {
     if (!scenarioId) return;
     startRun.mutate(
-      { scenarioId },
+      { scenarioId, request: startStepId !== undefined ? { startStepId } : undefined },
       {
         onSuccess: (run) => {
           runHistory.record({
@@ -197,6 +198,18 @@ export function ScenarioEditorPage() {
         },
       },
     );
+  }
+
+  // "Запустить отсюда" (кнопка на ноде, см. StepNode/RunFromNodeContext) — шаги до выбранной точки
+  // старта останутся PENDING до конца прогона, их предпосылки (например, уже созданные очереди)
+  // должны быть выполнены заранее. Бэкенд это не валидирует на фронте — только явно предупреждаем
+  // перед запуском через тот же ConfirmDialog, что и удаление сценария.
+  const [pendingRunFrom, setPendingRunFrom] = useState<{ stepId: number; stepName: string } | null>(null);
+
+  function handleConfirmRunFromNode() {
+    if (!pendingRunFrom) return;
+    handleRun(pendingRunFrom.stepId);
+    setPendingRunFrom(null);
   }
 
   const isSaving = createScenario.isPending || updateScenario.isPending;
@@ -221,7 +234,7 @@ export function ScenarioEditorPage() {
           удалить · выбрать ноду + Ctrl/Cmd+C, Ctrl/Cmd+V — скопировать
         </span>
         {scenarioId ? (
-          <JellyButton size="sm" variant="secondary" onClick={handleRun} disabled={startRun.isPending}>
+          <JellyButton size="sm" variant="secondary" onClick={() => handleRun()} disabled={startRun.isPending}>
             {startRun.isPending ? "Запуск…" : "Запустить"}
           </JellyButton>
         ) : null}
@@ -240,6 +253,7 @@ export function ScenarioEditorPage() {
             onConnect={onConnect}
             onSelectNode={(id) => setSelectedNodeId(id)}
             onDropStepType={handleDropStepType}
+            onRunFromNode={(stepId, stepName) => setPendingRunFrom({ stepId, stepName })}
           />
         </div>
 
@@ -254,6 +268,20 @@ export function ScenarioEditorPage() {
           />
         ) : null}
       </div>
+
+      <ConfirmDialog
+        open={pendingRunFrom !== null}
+        title="Запустить с этого шага?"
+        message={
+          pendingRunFrom
+            ? `Прогон начнётся сразу с шага «${pendingRunFrom.stepName}» — все шаги до него останутся в статусе PENDING (движок их не тронет). Убедитесь, что их предпосылки уже выполнены — например, нужные очереди созданы или заполнены — прежде чем продолжить.`
+            : ""
+        }
+        confirmLabel="Запустить"
+        danger={false}
+        onConfirm={handleConfirmRunFromNode}
+        onCancel={() => setPendingRunFrom(null)}
+      />
     </div>
   );
 }

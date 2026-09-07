@@ -1,6 +1,11 @@
 .app-shell {
-  min-height: 100vh;
-  min-height: 100dvh;
+  /* height (не min-height): без жёсткого потолка вся flex-цепочка ниже (.app-main → .editor-page/
+     .run-monitor-page → .editor-body/.run-monitor-body) не имела реального ограничения — min-height
+     только поднимает пол, но не мешает контенту растянуть .app-shell выше экрана. Из-за этого
+     разросшаяся правая панель (ConfigPanel/QueueItemsDrawer) не обрезалась и не скроллилась сама —
+     она просто раздвигала всю страницу, и скролл появлялся на html/body вместо самой панели. */
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -91,6 +96,11 @@
   display: flex;
   flex-direction: column;
   padding: clamp(16px, 2.5vw, 32px) clamp(16px, 3vw, 40px) clamp(24px, 3vw, 40px);
+  /* .app-shell теперь ограничен высотой экрана — простым страницам с длинным контентом (списки
+     сценариев/прогонов) нужен собственный скролл здесь взамен прежнего скролла на html/body
+     (внешне неотличимо: шапка вне этой области и так всегда видна, sticky ей больше не обязателен,
+     но не мешает). */
+  overflow-y: auto;
 }
 
 /* Планшет/узкий десктоп — заголовку тесно, прячем текст логотипа, оставляем иконку-леденец */

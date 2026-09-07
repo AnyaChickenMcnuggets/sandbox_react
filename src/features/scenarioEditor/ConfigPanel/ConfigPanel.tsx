@@ -32,7 +32,7 @@ export function ConfigPanel({ nodeId, data, onChangeName, onChangeConfig, onDele
     // другую ноду, чтобы useForm({defaultValues}) внутри *ConfigForm сбросился на конфиг НОВОЙ
     // ноды, а не сохранял значения предыдущей (React иначе переиспользовал бы тот же instance
     // компонента). Открытие панели — без анимации входа/выхода, по прямому запросу.
-    <div key={nodeId}>
+    <div key={nodeId} className="config-panel-wrap">
       <JellyPanel radius="lg" className="config-panel">
         <div className="config-panel-header">
           <JellyBadge tone={TONE[data.type]}>{STEP_TYPE_LABELS[data.type]}</JellyBadge>

@@ -23,6 +23,7 @@ export function applyRunOverlay(
           detail: stepRun.detail,
           errorMessage: stepRun.errorMessage,
           orchestratorQueueId: stepRun.orchestratorQueueId,
+          orchestratorQueueOwned: stepRun.orchestratorQueueOwned,
           orchestratorAssignmentId: stepRun.orchestratorAssignmentId,
           startedAt: stepRun.startedAt,
           finishedAt: stepRun.finishedAt,

@@ -24,6 +24,7 @@ export function QueueItemsDrawer({ runId, stepId, stepName, onClose }: QueueItem
     <AnimatePresence>
       <motion.div
         key={stepId}
+        className="queue-items-drawer-wrap"
         initial={{ opacity: 0, x: 24 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 24 }}

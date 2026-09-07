@@ -18,6 +18,7 @@ import { edgeTypes } from "./edgeTypes";
 import type { StepNodeData } from "./types";
 import type { ScenarioStepType } from "../api/types";
 import { collisionBus } from "./collisionBus";
+import { RunFromNodeContext } from "./RunFromNodeContext";
 import "./scenarioGraph.css";
 
 // Приблизительные габариты ноды (см. stepNode.css) — используются только для детекции сближения
@@ -37,6 +38,8 @@ export interface ScenarioGraphProps {
   selectedNodeId?: string | null;
   onSelectNode?: (nodeId: string, data: StepNodeData) => void;
   onDropStepType?: (type: ScenarioStepType, position: { x: number; y: number }) => void;
+  /** Показывает кнопку "Запустить отсюда" на нодах с сохранённым stepId (см. RunFromNodeContext). */
+  onRunFromNode?: (stepId: number, stepName: string) => void;
 }
 
 function ScenarioGraphInner({
@@ -48,6 +51,7 @@ function ScenarioGraphInner({
   onConnect,
   onSelectNode,
   onDropStepType,
+  onRunFromNode,
 }: ScenarioGraphProps) {
   const reactFlowInstance = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -100,30 +104,32 @@ function ScenarioGraphInner({
 
   return (
     <div className="scenario-graph-wrapper" ref={wrapperRef} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
-      <ReactFlow<Node<StepNodeData>>
-        nodes={nodes}
-        edges={edgesWithState}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        onNodesChange={isEdit ? onNodesChange : undefined}
-        onEdgesChange={isEdit ? onEdgesChange : undefined}
-        onConnect={isEdit ? onConnect : undefined}
-        onNodeDragStart={isEdit ? (_, node) => setDraggingNodeId(node.id) : undefined}
-        onNodeDrag={isEdit ? handleNodeDrag : undefined}
-        onNodeDragStop={isEdit ? () => setDraggingNodeId(null) : undefined}
-        nodesDraggable={isEdit}
-        nodesConnectable={isEdit}
-        elementsSelectable
-        deleteKeyCode={isEdit ? ["Backspace", "Delete"] : null}
-        onNodeClick={(_, node) => onSelectNode?.(node.id, node.data)}
-        fitView
-        proOptions={{ hideAttribution: true }}
-        minZoom={0.3}
-        maxZoom={1.5}
-      >
-        <Background variant={BackgroundVariant.Dots} gap={26} size={2} className="scenario-graph-bg" />
-        <Controls showInteractive={false} />
-      </ReactFlow>
+      <RunFromNodeContext.Provider value={onRunFromNode ?? null}>
+        <ReactFlow<Node<StepNodeData>>
+          nodes={nodes}
+          edges={edgesWithState}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          onNodesChange={isEdit ? onNodesChange : undefined}
+          onEdgesChange={isEdit ? onEdgesChange : undefined}
+          onConnect={isEdit ? onConnect : undefined}
+          onNodeDragStart={isEdit ? (_, node) => setDraggingNodeId(node.id) : undefined}
+          onNodeDrag={isEdit ? handleNodeDrag : undefined}
+          onNodeDragStop={isEdit ? () => setDraggingNodeId(null) : undefined}
+          nodesDraggable={isEdit}
+          nodesConnectable={isEdit}
+          elementsSelectable
+          deleteKeyCode={isEdit ? ["Backspace", "Delete"] : null}
+          onNodeClick={(_, node) => onSelectNode?.(node.id, node.data)}
+          fitView
+          proOptions={{ hideAttribution: true }}
+          minZoom={0.3}
+          maxZoom={1.5}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={26} size={2} className="scenario-graph-bg" />
+          <Controls showInteractive={false} />
+        </ReactFlow>
+      </RunFromNodeContext.Provider>
     </div>
   );
 }

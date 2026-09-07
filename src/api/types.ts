@@ -78,7 +78,11 @@ export interface ScenarioResponse {
 }
 
 export interface RunRequest {
-  triggeredBy: string | null;
+  triggeredBy?: string | null;
+  // Запуск с произвольного шага DAG вместо корней — шаги "до" точки старта остаются PENDING до
+  // конца прогона (движок их не трогает). Фронт не валидирует принадлежность/существование шага —
+  // это делает бэкенд (404/400), фронт только явно предупреждает пользователя перед запуском.
+  startStepId?: number | null;
 }
 
 export interface StepRunResponse {
@@ -90,6 +94,10 @@ export interface StepRunResponse {
   detailUpdatedAt: string | null; // OffsetDateTime
   orchestratorAssignmentId: number | null;
   orchestratorQueueId: string | null; // UUID
+  // true — очередь реально создана ЭТИМ прогоном (cleanup её удалит); false — переиспользована уже
+  // существовавшая под тем же именем (cleanup её не тронет). Шаги QUEUE_CHECK всегда false — они
+  // никогда не "владеют" очередью, даже если создали пустую для проверки.
+  orchestratorQueueOwned: boolean;
   startedAt: string | null; // OffsetDateTime
   finishedAt: string | null; // OffsetDateTime
   errorMessage: string | null;
@@ -101,6 +109,8 @@ export interface RunResponse {
   status: RunStatus;
   startedAt: string | null; // OffsetDateTime
   finishedAt: string | null; // OffsetDateTime
+  // Не null, если прогон запущен не с корней DAG, а с конкретного шага (см. RunRequest.startStepId).
+  startStepId: number | null;
   steps: StepRunResponse[];
 }
 

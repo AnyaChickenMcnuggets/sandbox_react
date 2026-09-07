@@ -21,6 +21,10 @@
   border: 1px solid var(--glass-border);
   cursor: pointer;
   color: var(--text-inverse);
+  /* Круглый блик (::before ниже) в светлой теме высветляет фон почти до белого ровно там, где
+     стоит текст — без тени текст сливается с бликом (был нечитаем в светлой теме). Тень держит
+     контраст независимо от яркости блика под текстом. */
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -47,7 +51,8 @@
 .step-node-header,
 .step-node-name,
 .step-node-detail,
-.step-node-queue-hint {
+.step-node-queue-hint,
+.step-node-queue-owned {
   position: relative;
   z-index: 1;
 }
@@ -116,6 +121,54 @@
   font-weight: 700;
   opacity: 0.75;
   text-align: right;
+}
+
+/* orchestratorQueueOwned — не должно быть "ярко", просто разборчиво: создавшая прогоном очередь
+   чуть заметнее переиспользованной, cleanup ведёт себя по-разному именно из-за этого поля. */
+.step-node-queue-owned {
+  font-size: 10px;
+  font-weight: 700;
+  text-align: right;
+}
+.step-node-queue-owned-yes {
+  opacity: 0.85;
+}
+.step-node-queue-owned-no {
+  opacity: 0.6;
+}
+
+/* Кнопка "Запустить отсюда" — не полноценный JellyButton (framer whileHover/whileTap на элементе
+   внутри draggable-ноды рискует повторить баг из истории StepNode, см. architecture.md): обычная
+   кнопка с CSS-переходами в том же "стеклянном" духе, что и .step-node-detail. Скрыта, пока по
+   ноде не наведён курсор — иначе на каждом сохранённом шаге DAG-холста висела бы лишняя кнопка. */
+.step-node-run-from {
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: var(--jelly-radius-pill);
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: rgb(255 255 255 / 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+}
+
+.step-node:hover .step-node-run-from,
+.step-node-run-from:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.step-node-run-from:hover {
+  background: rgb(255 255 255 / 0.42);
+  transform: scale(1.08) translateY(-1px);
+}
+
+.step-node-run-from:active {
+  transform: scale(0.92);
 }
 
 .step-node-clickable {

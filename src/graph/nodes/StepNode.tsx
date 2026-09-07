@@ -6,6 +6,7 @@ import type { StepNodeData } from "../types";
 import { STEP_TYPE_LABELS } from "../../lib/runStatus";
 import { StepNodeBadge } from "./StepNodeBadge";
 import { collisionBus } from "../collisionBus";
+import { useRunFromNode } from "../RunFromNodeContext";
 import "./stepNode.css";
 
 type AnimationControls = ReturnType<typeof useAnimationControls>;
@@ -77,12 +78,24 @@ function playResting(controls: AnimationControls, params: RestingParams) {
 }
 
 export function StepNode({ id, data, selected, dragging }: NodeProps<Node<StepNodeData>>) {
-  const { type, name, runtime } = data;
+  const { type, name, runtime, stepId } = data;
   const isViewMode = runtime !== undefined;
   const hasQueueAudit = runtime?.orchestratorQueueId != null;
   const controls = useAnimationControls();
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
+
+  // Есть только когда ScenarioGraph получил onRunFromNode (сейчас — только редактор) и шаг уже
+  // сохранён на бэкенде (stepId появляется после save, см. graph/types.ts) — до первого сохранения
+  // "запустить отсюда" не может ссылаться на реальный StepResponse.id.
+  const runFromNode = useRunFromNode();
+  const canRunFromHere = !isViewMode && runFromNode !== null && stepId !== undefined;
+
+  function handleRunFromHere(event: React.MouseEvent) {
+    event.stopPropagation();
+    if (stepId === undefined) return;
+    runFromNode?.(stepId, name);
+  }
 
   // Единственный источник "покоящейся" анимации — эффект зависит только от простых булевых/строковых
   // значений, не от позиции/скорости — гарантированно детерминирован.
@@ -132,6 +145,16 @@ export function StepNode({ id, data, selected, dragging }: NodeProps<Node<StepNo
       <div className="step-node-header">
         <span className="step-node-type-label">{STEP_TYPE_LABELS[type]}</span>
         {runtime ? <StepNodeBadge status={runtime.status} /> : null}
+        {canRunFromHere ? (
+          <button
+            type="button"
+            className="nodrag step-node-run-from"
+            onClick={handleRunFromHere}
+            title="Запустить сценарий с этого шага — шаги до него останутся PENDING"
+          >
+            ▶ Отсюда
+          </button>
+        ) : null}
       </div>
       <div className="step-node-name">{name}</div>
       {isViewMode ? (
@@ -143,6 +166,21 @@ export function StepNode({ id, data, selected, dragging }: NodeProps<Node<StepNo
           ) : (
             <span className="step-node-detail-empty">—</span>
           )}
+        </div>
+      ) : null}
+      {hasQueueAudit ? (
+        <div
+          className={clsx(
+            "step-node-queue-owned",
+            runtime.orchestratorQueueOwned ? "step-node-queue-owned-yes" : "step-node-queue-owned-no",
+          )}
+          title={
+            runtime.orchestratorQueueOwned
+              ? "Очередь создана этим прогоном — будет удалена по Cleanup"
+              : "Очередь переиспользована из уже существующей — Cleanup её не тронет"
+          }
+        >
+          {runtime.orchestratorQueueOwned ? "Очередь: создана" : "Очередь: переиспользована"}
         </div>
       ) : null}
       {hasQueueAudit ? <div className="step-node-queue-hint">Клик — транзакции очереди</div> : null}

@@ -48,6 +48,9 @@
 .jelly-button-primary {
   background-color: color-mix(in srgb, var(--color-accent) var(--glass-tint-pct), transparent);
   color: var(--text-inverse);
+  /* Диагональный --glass-shine (overlay выше) высветляет фон почти до белого в светлой теме —
+     тень держит контраст текста независимо от яркости блика под ним. */
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
 }
 .jelly-button-secondary {
   background-color: color-mix(in srgb, var(--surface-muted) var(--glass-tint-pct), transparent);
@@ -56,6 +59,7 @@
 .jelly-button-danger {
   background-color: color-mix(in srgb, var(--danger) var(--glass-tint-pct), transparent);
   color: var(--text-inverse);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
 }
 .jelly-button-ghost {
   background-color: transparent;

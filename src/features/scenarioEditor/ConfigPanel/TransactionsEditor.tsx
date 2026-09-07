@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { useFieldArray, useFormContext, type Control } from "react-hook-form";
 import { JellySegmented } from "../../../components/jelly/JellyToggle";
 import { JellyTextarea } from "../../../components/jelly/JellyInput";
+import { JellyButton } from "../../../components/jelly/JellyButton";
 import { TransactionTemplateListEditor } from "./TransactionTemplateListEditor";
 import type { QueueFormValues } from "./validation/stepConfigSchemas";
 import { parseTransactionsJson, transactionsToJson } from "./transactionMapping";
@@ -43,6 +44,33 @@ export function TransactionsEditor({ control }: TransactionsEditorProps) {
     }
   }
 
+  // Переформатировать вручную набранный/вставленный JSON тем же JSON.stringify(…, null, 2), что уже
+  // применяется при переключении списка в JSON-режим — просто по требованию, не на каждый keystroke
+  // (иначе курсор скакал бы при каждом нажатии клавиши). На синтаксически невалидном JSON — no-op,
+  // ошибка уже показана под полем через handleJsonChange.
+  function handleFormat() {
+    try {
+      const parsed = JSON.parse(transactionsJson);
+      handleJsonChange(JSON.stringify(parsed, null, 2));
+    } catch {
+      // невалидный JSON — форматировать нечего, jsonError уже отображён
+    }
+  }
+
+  // Обычный textarea отдаёт фокус дальше по Tab — неудобно при редактировании JSON построчно.
+  // Вставляем два пробела на месте курсора и оставляем фокус в поле, как в кодовых редакторах.
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Tab") return;
+    event.preventDefault();
+    const target = event.currentTarget;
+    const { selectionStart, selectionEnd, value } = target;
+    const next = `${value.slice(0, selectionStart)}  ${value.slice(selectionEnd)}`;
+    handleJsonChange(next);
+    requestAnimationFrame(() => {
+      target.selectionStart = target.selectionEnd = selectionStart + 2;
+    });
+  }
+
   return (
     <div className="transactions-editor">
       <JellySegmented
@@ -58,10 +86,17 @@ export function TransactionsEditor({ control }: TransactionsEditorProps) {
         <TransactionTemplateListEditor control={control} />
       ) : (
         <div className="transactions-json-field">
+          <div className="transactions-json-toolbar">
+            <span className="jelly-hint">Tab — отступ, не потеря фокуса</span>
+            <JellyButton type="button" variant="ghost" size="sm" onClick={handleFormat}>
+              Отформатировать
+            </JellyButton>
+          </div>
           <JellyTextarea
             className="transactions-json-textarea"
             value={transactionsJson}
             onChange={(e) => handleJsonChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder={'[\n  { "naturalKey": "1", "value": "...", "metadata": null }\n]'}
             spellCheck={false}
             hasError={!!jsonError}

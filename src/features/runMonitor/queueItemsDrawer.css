@@ -1,14 +1,30 @@
+/* Обёртка — реальный flex-элемент run-monitor-body, растягивается по высоте строки. Сама панель
+   внутри заполняет эту высоту через flex:1 вместо calc(100vh - N): захардкоженный вычет не совпадал
+   с реальной высотой строки, поэтому длинная таблица транзакций раздвигала всю страницу вместо
+   скролла внутри себя (см. .config-panel-wrap — тот же приём и та же причина). */
+.queue-items-drawer-wrap {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  min-height: 0;
+}
+
 .queue-items-drawer {
   width: 420px;
-  flex-shrink: 0;
-  max-height: calc(100vh - 200px);
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
 @media (max-width: 880px) {
+  .queue-items-drawer-wrap {
+    width: 100%;
+  }
+
   .queue-items-drawer {
     width: 100%;
+    flex: none;
     max-height: 60vh;
   }
 }

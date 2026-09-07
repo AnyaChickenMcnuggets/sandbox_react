@@ -20,12 +20,20 @@ interface RunHeaderProps {
 }
 
 export function RunHeader({ scenarioName, run }: RunHeaderProps) {
+  // startStepId — запуск не с корней DAG, а с конкретного шага ("Запустить отсюда" в редакторе);
+  // шаги до него остаются PENDING весь прогон, это не баг. Имя шага берём из steps[] по stepId — тот
+  // же массив, что и статусы, отдельного поля stepName на самом RunResponse нет.
+  const startStep = run.startStepId != null ? run.steps.find((s) => s.stepId === run.startStepId) : undefined;
+
   return (
     <JellyPanel radius="lg" className="run-header">
       <div className="run-header-top">
         <div>
           <div className="run-header-title">{scenarioName ?? `Сценарий #${run.scenarioId}`}</div>
-          <div className="run-header-subtitle">Прогон #{run.id}</div>
+          <div className="run-header-subtitle">
+            Прогон #{run.id}
+            {run.startStepId != null ? ` · запущено с шага «${startStep?.stepName ?? run.startStepId}»` : null}
+          </div>
         </div>
         <motion.div key={run.status} initial={{ scale: 0.7 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 16 }}>
           <JellyBadge tone={STATUS_TONE[run.status]} className="run-header-status">

@@ -8,7 +8,7 @@ const NODE_HEIGHT = 110;
 export function computeAutoLayout(nodes: Node[], edges: Edge[]): Record<string, NodePosition> {
   const graph = new dagre.graphlib.Graph();
   graph.setDefaultEdgeLabel(() => ({}));
-  graph.setGraph({ rankdir: "LR", nodesep: 60, ranksep: 120 });
+  graph.setGraph({ rankdir: "LR", nodesep: 90, ranksep: 170 });
 
   for (const node of nodes) {
     graph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
