@@ -4,8 +4,15 @@
   padding: 16px 18px;
   border-radius: var(--jelly-radius-lg);
   box-shadow: var(--jelly-shadow-outer), var(--jelly-shadow-inset-bottom);
-  background-image: var(--jelly-highlight);
+  /* Liquid Glass: цветное полупрозрачное "желе" с размытием того, что под ним (сетка холста
+     просвечивает сквозь ноду) + диагональный стеклянный блик. Тон всё ещё насыщенный (82%) —
+     JOB/QUEUE/QUEUE_CHECK остаются легко различимы по цвету, просто читаются как цветное стекло,
+     а не глухая заливка. */
+  background-image: var(--glass-shine);
   background-blend-mode: overlay;
+  backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
+  -webkit-backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
+  border: 1px solid var(--glass-border);
   cursor: pointer;
   color: var(--text-inverse);
   display: flex;
@@ -14,13 +21,13 @@
 }
 
 .step-node-job {
-  background-color: var(--color-job);
+  background-color: color-mix(in srgb, var(--color-job) var(--glass-tint-pct), transparent);
 }
 .step-node-queue {
-  background-color: var(--color-queue);
+  background-color: color-mix(in srgb, var(--color-queue) var(--glass-tint-pct), transparent);
 }
 .step-node-queue-check {
-  background-color: var(--color-queue-check);
+  background-color: color-mix(in srgb, var(--color-queue-check) var(--glass-tint-pct), transparent);
 }
 
 .step-node-selected {

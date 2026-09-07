@@ -1,6 +1,6 @@
 .error-banner {
   border: 2px solid color-mix(in srgb, var(--danger) 35%, transparent);
-  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  background: color-mix(in srgb, var(--danger) 14%, var(--glass-bg));
 }
 
 .error-banner-title {

@@ -161,7 +161,9 @@ export function ScenarioEditorPage() {
       {scenarioId && scenarioQuery.error ? <ErrorBanner error={scenarioQuery.error} title="Не удалось загрузить сценарий" /> : null}
 
       <div className="editor-toolbar-row">
-        <span className="editor-layout-hint">Расположение блоков сохраняется локально в этом браузере</span>
+        <span className="editor-layout-hint">
+          Расположение блоков сохраняется локально в этом браузере · клик по связи + Backspace/Delete — удалить
+        </span>
         {scenarioId ? (
           <JellyButton size="sm" variant="secondary" onClick={handleRun} disabled={startRun.isPending}>
             {startRun.isPending ? "Запуск…" : "Запустить"}

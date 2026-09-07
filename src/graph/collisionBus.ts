@@ -1,9 +1,9 @@
 // Лёгкая шина "столкновений" между нодами холста: пока одна нода тащится мышью и приближается
-// к другой, соседняя нода получает короткий направленный импульс сжатия/отскока — визуально
-// читается как "желейные объекты бампают друг друга". Не завязано на React state специально —
-// событие мгновенное и одноразовое (не нужно перерендеривать дерево нод на каждый тик драга).
+// к другой, соседняя нода получает короткий импульс сжатия/отскока — визуально читается как
+// "желейные объекты бампают друг друга". Не завязано на React state специально — событие мгновенное
+// и одноразовое (не нужно перерендеривать дерево нод на каждый тик драга).
 
-type BumpListener = (pushAngleDeg?: number) => void;
+type BumpListener = () => void;
 
 const listenersByNode = new Map<string, Set<BumpListener>>();
 
@@ -20,8 +20,7 @@ export const collisionBus = {
       if (set?.size === 0) listenersByNode.delete(nodeId);
     };
   },
-  /** pushAngleDeg — направление "толчка" (градусы, atan2 от толкающей ноды к этой). */
-  bump(nodeId: string, pushAngleDeg?: number) {
-    listenersByNode.get(nodeId)?.forEach((listener) => listener(pushAngleDeg));
+  bump(nodeId: string) {
+    listenersByNode.get(nodeId)?.forEach((listener) => listener());
   },
 };

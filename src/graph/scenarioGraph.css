@@ -15,12 +15,15 @@
   box-shadow: var(--jelly-shadow-outer);
   border-radius: var(--jelly-radius-md);
   overflow: hidden;
+  border: 1px solid var(--glass-border);
 }
 
 .react-flow__controls-button {
-  background: var(--surface);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
   border: none;
-  border-bottom: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--glass-border);
 }
 
 .react-flow__controls-button svg {

@@ -34,17 +34,20 @@
   border-radius: var(--jelly-radius-md);
   color: var(--text-inverse);
   box-shadow: var(--jelly-shadow-outer);
-  background-image: var(--jelly-highlight);
+  background-image: var(--glass-shine);
+  backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
+  -webkit-backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
+  border: 1px solid var(--glass-border);
 }
 
 .step-palette-item-job {
-  background-color: var(--color-job);
+  background-color: color-mix(in srgb, var(--color-job) var(--glass-tint-pct), transparent);
 }
 .step-palette-item-queue {
-  background-color: var(--color-queue);
+  background-color: color-mix(in srgb, var(--color-queue) var(--glass-tint-pct), transparent);
 }
 .step-palette-item-queue-check {
-  background-color: var(--color-queue-check);
+  background-color: color-mix(in srgb, var(--color-queue-check) var(--glass-tint-pct), transparent);
 }
 
 .step-palette-item-label {

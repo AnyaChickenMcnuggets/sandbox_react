@@ -66,7 +66,10 @@
   width: 34px;
   height: 34px;
   border-radius: var(--jelly-radius-pill);
-  background: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) var(--glass-tint-pct), transparent);
+  backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
+  -webkit-backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
+  border: 1px solid var(--glass-border);
   box-shadow: var(--jelly-shadow-outer);
   font-size: 16px;
 }

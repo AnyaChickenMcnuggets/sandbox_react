@@ -54,7 +54,9 @@
   font-weight: 700;
   position: sticky;
   top: 0;
-  background: var(--surface);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-tint-blur));
+  -webkit-backdrop-filter: blur(var(--glass-tint-blur));
 }
 
 .queue-items-table td {

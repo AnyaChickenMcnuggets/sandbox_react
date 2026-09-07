@@ -33,9 +33,13 @@
   filter: drop-shadow(0 0 5px var(--color-accent));
 }
 
+/* Выбранное ребро — толще, ярче и с пунктиром (визуальная подсказка "готово к удалению — Backspace
+   или Delete"), без отдельной кнопки. */
 .react-flow__edge.selected .jelly-edge-base {
   stroke: var(--color-accent);
-  stroke-width: 4;
+  stroke-width: 4.5;
+  stroke-dasharray: 9 7;
+  animation: none;
 }
 
 /* Ребро, один из концов которого сейчас тащат мышью — "натянутая резинка": быстрее пульсирует,

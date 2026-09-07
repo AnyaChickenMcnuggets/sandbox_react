@@ -8,7 +8,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: var(--surface-muted) !important;
+  background: color-mix(in srgb, var(--surface-muted) 55%, transparent) !important;
+  border: 1px solid var(--glass-border);
 }
 
 .transaction-row-header {

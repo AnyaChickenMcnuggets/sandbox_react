@@ -17,20 +17,22 @@
   padding: 16px 18px;
   border-radius: var(--jelly-radius-md);
   box-shadow: var(--jelly-shadow-outer);
-  background: var(--surface);
-  background-image: var(--jelly-highlight);
+  background-image: var(--glass-shine);
+  backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
+  -webkit-backdrop-filter: blur(var(--glass-tint-blur)) saturate(1.6);
+  border: 1px solid var(--glass-border);
 }
 
 .toast-error {
-  background-color: var(--danger);
+  background-color: color-mix(in srgb, var(--danger) var(--glass-tint-pct), transparent);
   color: var(--text-inverse);
 }
 .toast-success {
-  background-color: var(--status-succeeded);
+  background-color: color-mix(in srgb, var(--status-succeeded) var(--glass-tint-pct), transparent);
   color: var(--text-inverse);
 }
 .toast-info {
-  background-color: var(--surface);
+  background-color: var(--glass-bg);
   color: var(--text-primary);
 }
 

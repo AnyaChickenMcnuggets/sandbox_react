@@ -22,11 +22,16 @@ const RUNTIME_CLASS: Record<string, string> = {
   STOPPED: "step-node-runtime-stopped",
 };
 
-// Чувствительность растяжения к скорости перетаскивания и жёсткий потолок — clamp внутри
-// useTransform ниже гарантирует, что при любом (даже перелетевшем через 0) значении motion value
-// видимый scale никогда не уйдёт в инверсию ("вывернутая" нода) и не "раздуется" сверх меры.
-const DRAG_STRETCH_SENSITIVITY = 6;
-const MAX_STRETCH = 0.3;
+// Чувствительность растяжения к скорости и потолок на само растяжение (clamp внутри useTransform
+// ниже — жёсткая аварийная граница на ВИДИМЫЙ scale, а не только на входные данные).
+const DRAG_STRETCH_SENSITIVITY = 5;
+const MAX_STRETCH = 0.22;
+const SAFE_MIN_SCALE = 0.6;
+const SAFE_MAX_SCALE = 1.5;
+// Сглаживание скорости (EMA) — сырая покадровая дельта позиции на медленном драге шумит на уровне
+// одного пикселя (квантование), из-за чего направление "дёргалось". Сглаженная скорость гасит этот
+// шум, оставаясь отзывчивой на быстрых рывках.
+const VELOCITY_SMOOTHING = 0.75;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -44,18 +49,20 @@ export function StepNode({
   const isViewMode = runtime !== undefined;
   const hasQueueAudit = runtime?.orchestratorQueueId != null;
 
-  // Инерция при драге: растяжение вдоль направления реального движения мыши (не по осям X/Y
-  // независимо — раньше это давало "странную" диагональную деформацию, не совпадающую с
-  // визуальным направлением жеста). Технически — поворот на угол движения, растяжение вдоль
-  // локальной оси X, обратный поворот, чтобы контент остался читаемым. `stretch` всегда клампится
-  // и на входе, и внутри useTransform (двойная защита от "вывернутой" ноды при перелёте пружины).
-  const stretch = useMotionValue(0);
-  const angle = useMotionValue(0);
-  const scaleX = useTransform(stretch, (s) => 1 + clamp(s, 0, MAX_STRETCH));
-  const scaleY = useTransform(stretch, (s) => 1 - clamp(s, 0, MAX_STRETCH) * 0.5);
-  const counterAngle = useTransform(angle, (a) => -a);
+  // Инерция при драге — без поворотов (комбинация rotate+non-uniform-scale в двух вложенных слоях
+  // и правда сломала себя раньше: после отпускания нода иногда оставалась расплющенной). Вместо
+  // этого — растяжение по осям напрямую: bias ∈ [-1..1] показывает, какая ось доминирует в
+  // сглаженной скорости, stretchMag — общая величина. Обе оси всегда двигаются НАВСТРЕЧУ друг
+  // другу (одна растягивается настолько же, насколько другая сжимается), поэтому итоговый scale
+  // никогда не уходит в ноль/отрицательные значения арифметически, а useTransform дополнительно
+  // жёстко клампит видимое значение на случай любого перелёта пружины осседания.
+  const rawScaleX = useMotionValue(1);
+  const rawScaleY = useMotionValue(1);
+  const scaleX = useTransform(rawScaleX, (v) => clamp(v, SAFE_MIN_SCALE, SAFE_MAX_SCALE));
+  const scaleY = useTransform(rawScaleY, (v) => clamp(v, SAFE_MIN_SCALE, SAFE_MAX_SCALE));
 
   const prevRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  const velocityRef = useRef({ vx: 0, vy: 0 });
   const wasDraggingRef = useRef(false);
 
   useEffect(() => {
@@ -64,80 +71,88 @@ export function StepNode({
 
     if (dragging && prev) {
       const dt = Math.max(now - prev.t, 8);
-      const vx = (positionAbsoluteX - prev.x) / dt;
-      const vy = (positionAbsoluteY - prev.y) / dt;
-      const speed = Math.hypot(vx, vy);
-      if (speed > 0.01) {
-        angle.set((Math.atan2(vy, vx) * 180) / Math.PI);
-      }
-      stretch.set(clamp(speed * DRAG_STRETCH_SENSITIVITY, 0, MAX_STRETCH));
+      const rawVx = (positionAbsoluteX - prev.x) / dt;
+      const rawVy = (positionAbsoluteY - prev.y) / dt;
+      const v = velocityRef.current;
+      v.vx = v.vx * VELOCITY_SMOOTHING + rawVx * (1 - VELOCITY_SMOOTHING);
+      v.vy = v.vy * VELOCITY_SMOOTHING + rawVy * (1 - VELOCITY_SMOOTHING);
+
+      const absVx = Math.abs(v.vx);
+      const absVy = Math.abs(v.vy);
+      const speed = Math.hypot(v.vx, v.vy);
+      // Домножаем на magnitude (stretchMag), которая сама мала на медленной скорости — остаточный
+      // шум в bias (неизбежный при почти нулевой скорости) гасится этим множителем, а не остаётся
+      // видимым дёрганьем.
+      const stretchMag = clamp(speed * DRAG_STRETCH_SENSITIVITY, 0, MAX_STRETCH);
+      const bias = (absVx - absVy) / (absVx + absVy + 0.001); // -1 (вертикаль) .. 1 (горизонталь)
+
+      rawScaleX.set(1 + stretchMag * bias);
+      rawScaleY.set(1 - stretchMag * bias);
       wasDraggingRef.current = true;
     } else if (wasDraggingRef.current) {
-      // Умеренный damping — пружина оседает с лёгким перелётом, но clamp в useTransform не даёт
-      // даже кратковременному отрицательному перелёту превратиться в визуальную инверсию.
-      animate(stretch, 0, { type: "spring", stiffness: 220, damping: 13, mass: 0.8 });
+      animate(rawScaleX, 1, { type: "spring", stiffness: 260, damping: 16, mass: 0.7 });
+      animate(rawScaleY, 1, { type: "spring", stiffness: 260, damping: 16, mass: 0.7 });
+      velocityRef.current = { vx: 0, vy: 0 };
       wasDraggingRef.current = false;
     }
     prevRef.current = { x: positionAbsoluteX, y: positionAbsoluteY, t: now };
-  }, [dragging, positionAbsoluteX, positionAbsoluteY, angle, stretch]);
+  }, [dragging, positionAbsoluteX, positionAbsoluteY, rawScaleX, rawScaleY]);
 
-  // Коллизия с соседней нодой (см. ScenarioGraph.handleNodeDrag) — направленный импульс: соседа
-  // "толкает" в ту сторону, откуда пришла перетаскиваемая нода.
+  // Коллизия с соседней нодой (см. ScenarioGraph.handleNodeDrag) — короткий импульс сжатия/отскока
+  // на этих же motion values, будто соседний желейный блок толкнули.
   useEffect(() => {
-    return collisionBus.subscribe(id, (pushAngle) => {
-      if (pushAngle !== undefined) angle.set(pushAngle);
-      animate(stretch, [0, MAX_STRETCH * 1.15, 0], { duration: 0.45, ease: "easeOut" });
+    return collisionBus.subscribe(id, () => {
+      animate(rawScaleX, [1, 1 - MAX_STRETCH * 1.3, 1 + MAX_STRETCH * 0.6, 1], { duration: 0.45, ease: "easeOut" });
+      animate(rawScaleY, [1, 1 + MAX_STRETCH * 1.3, 1 - MAX_STRETCH * 0.6, 1], { duration: 0.45, ease: "easeOut" });
     });
-  }, [id, angle, stretch]);
+  }, [id, rawScaleX, rawScaleY]);
 
   return (
-    <motion.div style={{ rotate: angle }}>
-      <motion.div style={{ scaleX, scaleY, rotate: counterAngle }}>
-        <motion.div
-          className={clsx(
-            "step-node",
-            TYPE_CLASS[type],
-            runtime && RUNTIME_CLASS[runtime.status],
-            selected && "step-node-selected",
-            hasQueueAudit && "step-node-clickable",
-          )}
-          // whileHover/whileTap иначе остаются "прилипшими" на всю длительность драга (framer
-          // ловит pointerdown/hover независимо от собственной drag-системы xyflow) и накладываются
-          // поверх stretch/scaleX/scaleY выше — это и было источником "странной" тряски при
-          // перетаскивании. Отключаем их, пока xyflow реально тащит ноду.
-          whileHover={dragging ? undefined : { scale: 1.06, y: -4 }}
-          whileTap={dragging ? undefined : { scaleX: 1.1, scaleY: 0.88, y: 1 }}
-          animate={
-            runtime?.status === "RUNNING"
-              ? { scale: [1, 1.02, 1] }
-              : { scale: 1 }
-          }
-          transition={
-            runtime?.status === "RUNNING"
-              ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
-              : { type: "spring", stiffness: 260, damping: 10, mass: 0.8 }
-          }
-        >
-          <Handle type="target" position={Position.Left} />
-          <div className="step-node-header">
-            <span className="step-node-type-label">{STEP_TYPE_LABELS[type]}</span>
-            {runtime ? <StepNodeBadge status={runtime.status} /> : null}
+    <motion.div style={{ scaleX, scaleY }}>
+      <motion.div
+        className={clsx(
+          "step-node",
+          TYPE_CLASS[type],
+          runtime && RUNTIME_CLASS[runtime.status],
+          selected && "step-node-selected",
+          hasQueueAudit && "step-node-clickable",
+        )}
+        // whileHover/whileTap иначе остаются "прилипшими" на всю длительность драга (framer
+        // ловит pointerdown/hover независимо от собственной drag-системы xyflow) и накладываются
+        // поверх stretch/scaleX/scaleY выше — это и было источником "странной" тряски при
+        // перетаскивании. Отключаем их, пока xyflow реально тащит ноду.
+        whileHover={dragging ? undefined : { scale: 1.06, y: -4 }}
+        whileTap={dragging ? undefined : { scaleX: 1.1, scaleY: 0.88, y: 1 }}
+        animate={
+          runtime?.status === "RUNNING"
+            ? { scale: [1, 1.02, 1] }
+            : { scale: 1 }
+        }
+        transition={
+          runtime?.status === "RUNNING"
+            ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
+            : { type: "spring", stiffness: 260, damping: 10, mass: 0.8 }
+        }
+      >
+        <Handle type="target" position={Position.Left} />
+        <div className="step-node-header">
+          <span className="step-node-type-label">{STEP_TYPE_LABELS[type]}</span>
+          {runtime ? <StepNodeBadge status={runtime.status} /> : null}
+        </div>
+        <div className="step-node-name">{name}</div>
+        {isViewMode ? (
+          <div className="step-node-detail">
+            {runtime.errorMessage ? (
+              <span className="step-node-error">{runtime.errorMessage}</span>
+            ) : runtime.detail ? (
+              <span>{runtime.detail}</span>
+            ) : (
+              <span className="step-node-detail-empty">—</span>
+            )}
           </div>
-          <div className="step-node-name">{name}</div>
-          {isViewMode ? (
-            <div className="step-node-detail">
-              {runtime.errorMessage ? (
-                <span className="step-node-error">{runtime.errorMessage}</span>
-              ) : runtime.detail ? (
-                <span>{runtime.detail}</span>
-              ) : (
-                <span className="step-node-detail-empty">—</span>
-              )}
-            </div>
-          ) : null}
-          {hasQueueAudit ? <div className="step-node-queue-hint">Клик — транзакции очереди</div> : null}
-          <Handle type="source" position={Position.Right} />
-        </motion.div>
+        ) : null}
+        {hasQueueAudit ? <div className="step-node-queue-hint">Клик — транзакции очереди</div> : null}
+        <Handle type="source" position={Position.Right} />
       </motion.div>
     </motion.div>
   );

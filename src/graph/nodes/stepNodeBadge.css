@@ -6,6 +6,9 @@
   font-size: 11px;
   font-weight: 800;
   color: var(--text-inverse);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgb(255 255 255 / 0.35);
 }
 
 .step-node-badge-PENDING {

@@ -12,9 +12,11 @@
 }
 
 .qc-key-remove {
-  border: none;
-  background: var(--surface-muted);
-  color: var(--danger);
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--danger-dark);
   width: 30px;
   height: 30px;
   border-radius: 50%;

@@ -17,6 +17,10 @@
   --glass-border: rgb(255 255 255 / 0.6);
   --glass-blur: 22px;
   --glass-shine: linear-gradient(120deg, rgb(255 255 255 / 0.55) 0%, rgb(255 255 255 / 0.1) 35%, transparent 60%);
+  /* Более лёгкое размытие для компактных цветных "стеклянных" элементов (кнопки/бейджи/ноды) —
+     полный --glass-blur на 30-40px кнопке избыточен и дорог по перформансу. */
+  --glass-tint-blur: 14px;
+  --glass-tint-pct: 82%;
 
   --bg-page: #fbf4ea;
   --bg-canvas: #f4ead9;

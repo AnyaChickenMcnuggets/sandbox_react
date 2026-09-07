@@ -82,8 +82,7 @@ function ScenarioGraphInner({
       const lastBump = lastBumpRef.current.get(other.id) ?? 0;
       if (now - lastBump < BUMP_COOLDOWN_MS) continue;
       lastBumpRef.current.set(other.id, now);
-      const pushAngle = (Math.atan2(otherCenterY - draggedCenterY, otherCenterX - draggedCenterX) * 180) / Math.PI;
-      collisionBus.bump(other.id, pushAngle);
+      collisionBus.bump(other.id);
     }
   }
 
@@ -91,20 +90,19 @@ function ScenarioGraphInner({
 
   // Рёбра, инцидентные перетаскиваемой ноде, получают data.nodeDragging — JellyEdge реагирует
   // на это как на натянутую резинку (см. jellyEdge.css), а не просто рисует статичную линию.
-  const edgesWithDragState =
-    isEdit && draggingNodeId
-      ? edges.map((edge) =>
-          edge.source === draggingNodeId || edge.target === draggingNodeId
-            ? { ...edge, data: { ...edge.data, nodeDragging: true } }
-            : edge,
-        )
-      : edges;
+  const edgesWithState = edges.map((edge) => ({
+    ...edge,
+    data: {
+      ...edge.data,
+      nodeDragging: isEdit && draggingNodeId !== null && (edge.source === draggingNodeId || edge.target === draggingNodeId),
+    },
+  }));
 
   return (
     <div className="scenario-graph-wrapper" ref={wrapperRef} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>
       <ReactFlow<Node<StepNodeData>>
         nodes={nodes}
-        edges={edgesWithDragState}
+        edges={edgesWithState}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={isEdit ? onNodesChange : undefined}
@@ -116,6 +114,7 @@ function ScenarioGraphInner({
         nodesDraggable={isEdit}
         nodesConnectable={isEdit}
         elementsSelectable
+        deleteKeyCode={isEdit ? ["Backspace", "Delete"] : null}
         onNodeClick={(_, node) => onSelectNode?.(node.id, node.data)}
         fitView
         proOptions={{ hideAttribution: true }}

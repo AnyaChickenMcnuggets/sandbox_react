@@ -10,9 +10,11 @@
   width: 46px;
   height: 26px;
   border-radius: var(--jelly-radius-pill);
-  border: none;
-  background: var(--surface-muted);
+  border: 1px solid var(--glass-border);
+  background: color-mix(in srgb, var(--surface-muted) 55%, transparent);
   box-shadow: var(--jelly-shadow-inset-bottom);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   padding: 3px;
   cursor: pointer;
   display: flex;
@@ -25,7 +27,7 @@
 }
 
 .jelly-toggle-on {
-  background: var(--color-queue);
+  background: color-mix(in srgb, var(--color-queue) var(--glass-tint-pct), transparent);
 }
 
 .jelly-toggle-knob {
@@ -51,9 +53,12 @@
   position: relative;
   display: inline-flex;
   padding: 4px;
-  background: var(--surface-muted);
+  background: color-mix(in srgb, var(--surface-muted) 55%, transparent);
+  border: 1px solid var(--glass-border);
   border-radius: var(--jelly-radius-pill);
   box-shadow: var(--jelly-shadow-inset-bottom);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   gap: 2px;
 }
 
@@ -70,7 +75,9 @@
 .jelly-segmented-active {
   position: absolute;
   inset: 0;
-  background: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) var(--glass-tint-pct), transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border-radius: var(--jelly-radius-pill);
   box-shadow: var(--jelly-shadow-outer);
   z-index: 0;
