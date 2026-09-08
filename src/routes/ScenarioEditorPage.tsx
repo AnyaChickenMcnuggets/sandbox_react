@@ -24,8 +24,6 @@ import { StepPalette } from "../features/scenarioEditor/StepPalette";
 import { ConfigPanel } from "../features/scenarioEditor/ConfigPanel/ConfigPanel";
 import { ErrorBanner } from "../components/feedback/ErrorBanner";
 import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
-import { JellyButton } from "../components/jelly/JellyButton";
-import { IconPlay } from "../components/jelly/icons";
 import { toastStore } from "../components/feedback/toastStore";
 import { runHistory } from "../lib/runHistory";
 import "./scenarioEditorPage.css";
@@ -226,29 +224,11 @@ export function ScenarioEditorPage() {
         onSave={handleSave}
         isSaving={isSaving}
         nameError={nameError}
+        onRun={scenarioId ? () => handleRun() : undefined}
+        isStarting={startRun.isPending}
       />
 
       {scenarioId && scenarioQuery.error ? <ErrorBanner error={scenarioQuery.error} title="Не удалось загрузить сценарий" /> : null}
-
-      <div className="editor-toolbar-row">
-        <span className="editor-layout-hint">
-          Расположение блоков сохраняется локально в этом браузере · клик по связи + Backspace/Delete —
-          удалить · выбрать ноду + Ctrl/Cmd+C, Ctrl/Cmd+V — скопировать
-        </span>
-        {scenarioId ? (
-          <JellyButton
-            size="sm"
-            variant="success"
-            iconOnly
-            title={startRun.isPending ? "Запуск…" : "Запустить"}
-            aria-label={startRun.isPending ? "Запуск…" : "Запустить"}
-            onClick={() => handleRun()}
-            disabled={startRun.isPending}
-          >
-            <IconPlay />
-          </JellyButton>
-        ) : null}
-      </div>
 
       <div className="editor-body">
         <StepPalette />
