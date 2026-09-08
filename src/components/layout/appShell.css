@@ -55,6 +55,11 @@
   color: var(--text-primary);
 }
 
+.app-nav-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(255 122 156 / 0.4);
+}
+
 .app-nav-link-active {
   background: var(--glass-bg);
   backdrop-filter: blur(calc(var(--glass-blur) / 2));

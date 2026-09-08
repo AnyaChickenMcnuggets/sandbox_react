@@ -48,9 +48,6 @@
 .jelly-button-primary {
   background-color: color-mix(in srgb, var(--color-accent) var(--glass-tint-pct), transparent);
   color: var(--text-inverse);
-  /* Диагональный --glass-shine (overlay выше) высветляет фон почти до белого в светлой теме —
-     тень держит контраст текста независимо от яркости блика под ним. */
-  text-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
 }
 .jelly-button-secondary {
   background-color: color-mix(in srgb, var(--surface-muted) var(--glass-tint-pct), transparent);
@@ -59,7 +56,6 @@
 .jelly-button-danger {
   background-color: color-mix(in srgb, var(--danger) var(--glass-tint-pct), transparent);
   color: var(--text-inverse);
-  text-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
 }
 .jelly-button-ghost {
   background-color: transparent;
@@ -68,4 +64,12 @@
   border-color: transparent;
   color: var(--text-secondary);
   box-shadow: none;
+}
+
+/* Клавиатурный фокус — на всех вариантах, включая ghost (правило ниже .jelly-button-ghost по
+   каскаду отменяет её box-shadow:none). Без этого фокус кнопок падал на нативный синий outline
+   браузера, чужеродный в этой палитре. */
+.jelly-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgb(255 122 156 / 0.4), var(--jelly-shadow-outer), var(--jelly-shadow-inset-bottom);
 }

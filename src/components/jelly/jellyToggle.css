@@ -26,6 +26,11 @@
   cursor: not-allowed;
 }
 
+.jelly-toggle-track:focus-visible {
+  outline: none;
+  box-shadow: var(--jelly-shadow-inset-bottom), 0 0 0 3px rgb(255 122 156 / 0.4);
+}
+
 .jelly-toggle-on {
   background: color-mix(in srgb, var(--color-queue) var(--glass-tint-pct), transparent);
 }
@@ -70,6 +75,11 @@
   border-radius: var(--jelly-radius-pill);
   cursor: pointer;
   font-family: inherit;
+}
+
+.jelly-segmented-option:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(255 122 156 / 0.4);
 }
 
 .jelly-segmented-active {

@@ -29,15 +29,24 @@
   --surface-muted: #fff8ee;
   --text-primary: #3a2f28;
   --text-secondary: #7a6a5c;
-  --text-inverse: #fffaf2;
+  /* На кнопках/нодах/тостах/сегментах этот цвет садится на 82%-непрозрачный цветной тинт
+     (job/accent/danger/...) поверх СВЕТЛОЙ поверхности — сам тинт остаётся светлым пастельным,
+     поэтому тексту нужен тёмный, а не светлый цвет (в отличие от тёмной темы, где та же формула
+     даёт достаточно контраста и с тёмным текстом — там "инверсия" не нужна вовсе). Раньше тут был
+     светлый #fffaf2 — белый текст на светлом пастельном тинте проваливался до ~1.7-2.8:1 (WCAG
+     требует 4.5:1), с var(--text-primary) на всех тех же парах — 5-9:1.
+  */
+  --text-inverse: var(--text-primary);
   --border-soft: rgb(58 47 40 / 0.08);
 
   --color-job: #ff9d6c;
-  --color-job-dark: #cf6b3a;
+  /* -dark — только для JellyBadge (текст на "soft"-тинте бейджа), больше нигде не используется:
+     свободно калибровать отдельно от самого --color-job. Раньше #cf6b3a на бейдже давал 3.1:1. */
+  --color-job-dark: #a64712;
   --color-job-soft: #ffe3d1;
 
   --color-queue: #6bd4c2;
-  --color-queue-dark: #2f9587;
+  --color-queue-dark: #237064;
   --color-queue-soft: #d4f5ee;
 
   --color-queue-check: #9c8cf0;
@@ -50,16 +59,21 @@
   --status-pending: #c3bcb0;
   --status-pending-dark: #948b7d;
   --status-running: #ffc857;
-  --status-running-dark: #e0982a;
+  --status-running-dark: #96590a;
   --status-succeeded: #6fcf97;
-  --status-succeeded-dark: #359463;
+  --status-succeeded-dark: #1f6e46;
   --status-failed: #f2685f;
-  --status-failed-dark: #c73f38;
+  --status-failed-dark: #a02e28;
   --status-stopped: #a3a8b5;
   --status-stopped-dark: #6d7180;
 
   --danger: #e5544f;
   --danger-dark: #b83430;
+
+  /* Стрелка нативного <select> — SVG зашит цветом, currentColor в data-URI фона не работает,
+     поэтому цвет продублирован здесь и в обоих тёмных блоках ниже (тот же паттерн, что у остальных
+     токенов палитры). */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%237a6a5c' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 @media (prefers-color-scheme: dark) {
@@ -114,6 +128,8 @@
 
     --danger: #ff6b64;
     --danger-dark: #ff958f;
+
+    --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23b3a6c9' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
 }
 
@@ -168,6 +184,8 @@
 
   --danger: #ff6b64;
   --danger-dark: #ff958f;
+
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%23b3a6c9' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 * {
@@ -177,7 +195,11 @@
 body {
   background: var(--bg-page);
   color: var(--text-primary);
+  /* Baloo 2 — фактически подключённый "пузырьковый" шрифт (см. index.html): предыдущий стек
+     ссылался на "Nunito"/"SF Pro Rounded" без единого @font-face/<link>, поэтому реально везде
+     рендерился системный Segoe UI/San Francisco — ни разу не то, что задумывалось. */
   font-family:
+    "Baloo 2",
     "Nunito",
     ui-rounded,
     "SF Pro Rounded",
