@@ -2,7 +2,7 @@ import { useState } from "react";
 import { JellyPanel } from "../../components/jelly/JellyPanel";
 import { JellyInput, JellyTextarea } from "../../components/jelly/JellyInput";
 import { JellyButton } from "../../components/jelly/JellyButton";
-import { IconEdit, IconPlay, IconSave } from "../../components/jelly/icons";
+import { IconPlay, IconSave } from "../../components/jelly/icons";
 import "./editorHeader.css";
 
 interface EditorHeaderProps {
@@ -31,10 +31,10 @@ export function EditorHeader({
 }: EditorHeaderProps) {
   // Название/описание редактируются раз в синюю луну (в отличие от конфига шагов) — два больших
   // поля были всегда развёрнуты и отъедали высоту у холста без пользы большую часть времени.
-  // По умолчанию свёрнуто в одну строку-заголовок; клик — разворачивает обратно в форму. Новый,
-  // ещё безымянный сценарий сразу открыт (свернуть в заголовок нечего показывать). Ошибка валидации
-  // принудительно держит форму развёрнутой, даже если пользователь до этого её свернул.
-  const [isEditing, setIsEditing] = useState(!name);
+  // Всегда свёрнуто по умолчанию, даже для нового безымянного сценария — клик по заголовку
+  // разворачивает обратно в форму. Ошибка валидации принудительно держит форму развёрнутой, даже
+  // если пользователь до этого её свернул.
+  const [isEditing, setIsEditing] = useState(false);
   const editing = isEditing || !!nameError;
 
   return (
@@ -71,9 +71,10 @@ export function EditorHeader({
           </div>
         ) : (
           <button type="button" className="editor-header-summary" onClick={() => setIsEditing(true)}>
-            <IconEdit className="editor-header-summary-icon" width={15} height={15} />
             <span className="editor-header-summary-text">
-              <span className="editor-header-summary-name">{name}</span>
+              <span className="editor-header-summary-name">
+                {name || <span className="editor-header-summary-name-empty">Название сценария</span>}
+              </span>
               <span className="editor-header-summary-desc">
                 {description || <span className="editor-header-summary-desc-empty">Добавить описание</span>}
               </span>
