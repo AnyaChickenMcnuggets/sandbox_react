@@ -22,6 +22,16 @@ export function IconEdit(props: IconProps) {
   );
 }
 
+export function IconSave(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M5 3h11.5L21 7.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" strokeLinejoin="round" />
+      <path d="M7.5 3v6h8V3" />
+      <path d="M7 21v-7h10v7" />
+    </svg>
+  );
+}
+
 export function IconPlay(props: IconProps) {
   return (
     <svg {...base} {...props}>

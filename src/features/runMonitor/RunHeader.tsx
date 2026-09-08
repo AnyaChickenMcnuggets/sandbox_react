@@ -15,7 +15,9 @@ const STATUS_TONE: Record<RunResponse["status"], "neutral" | "warning" | "succes
 };
 
 interface RunHeaderProps {
-  scenarioName: string | undefined;
+  // Уже разрешённая строка (имя сценария/"Загрузка…"/"Сценарий недоступен") — резолвится в
+  // RunMonitorPage, у которого есть доступ к состоянию отдельного запроса сценария (см. там же).
+  scenarioName: string;
   run: RunResponse;
 }
 
@@ -29,10 +31,12 @@ export function RunHeader({ scenarioName, run }: RunHeaderProps) {
     <JellyPanel radius="lg" className="run-header">
       <div className="run-header-top">
         <div>
-          <div className="run-header-title">{scenarioName ?? `Сценарий #${run.scenarioId}`}</div>
+          <div className="run-header-title">{scenarioName}</div>
+          {/* Запуск — не именованная сущность (нет поля "название" на RunResponse), поэтому вместо
+              технического "Прогон #N" — либо повод старта с конкретного шага, либо ничего лишнего:
+              время старта и так есть в таймлайне ниже. */}
           <div className="run-header-subtitle">
-            Прогон #{run.id}
-            {run.startStepId != null ? ` · запущено с шага «${startStep?.stepName ?? run.startStepId}»` : null}
+            {run.startStepId != null ? `Запущено с шага «${startStep?.stepName ?? "неизвестного"}»` : "Запуск сценария"}
           </div>
         </div>
         <motion.div key={run.status} initial={{ scale: 0.7 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 16 }}>

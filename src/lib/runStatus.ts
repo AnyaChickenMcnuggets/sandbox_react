@@ -13,9 +13,9 @@ export const RUN_STATUS_LABELS: Record<RunStatus, string> = {
 };
 
 export const STEP_TYPE_LABELS: Record<ScenarioStepType, string> = {
-  JOB: "Job",
-  QUEUE: "Queue",
-  QUEUE_CHECK: "Queue Check",
+  JOB: "Задание",
+  QUEUE: "Настроить очередь",
+  QUEUE_CHECK: "Проверить очередь",
 };
 
 export const STEP_TYPE_DESCRIPTIONS: Record<ScenarioStepType, string> = {

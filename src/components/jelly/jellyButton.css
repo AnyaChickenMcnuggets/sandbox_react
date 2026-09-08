@@ -53,6 +53,10 @@
   background-color: color-mix(in srgb, var(--surface-muted) var(--glass-tint-pct), transparent);
   color: var(--text-primary);
 }
+.jelly-button-success {
+  background-color: color-mix(in srgb, var(--status-succeeded) var(--glass-tint-pct), transparent);
+  color: var(--text-inverse);
+}
 .jelly-button-danger {
   background-color: color-mix(in srgb, var(--danger) var(--glass-tint-pct), transparent);
   color: var(--text-inverse);

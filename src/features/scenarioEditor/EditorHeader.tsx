@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { JellyInput, JellyTextarea } from "../../components/jelly/JellyInput";
 import { JellyButton } from "../../components/jelly/JellyButton";
-import { IconEdit } from "../../components/jelly/icons";
+import { IconEdit, IconSave } from "../../components/jelly/icons";
 import "./editorHeader.css";
 
 interface EditorHeaderProps {
@@ -69,8 +69,14 @@ export function EditorHeader({
           </span>
         </button>
       )}
-      <JellyButton onClick={onSave} disabled={isSaving}>
-        {isSaving ? "Сохранение…" : "Сохранить"}
+      <JellyButton
+        iconOnly
+        title={isSaving ? "Сохранение…" : "Сохранить"}
+        aria-label={isSaving ? "Сохранение…" : "Сохранить"}
+        onClick={onSave}
+        disabled={isSaving}
+      >
+        <IconSave />
       </JellyButton>
     </div>
   );

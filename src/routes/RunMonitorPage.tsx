@@ -41,7 +41,7 @@ export function RunMonitorPage() {
 
   function handleStop() {
     stopRun.mutate(runId, {
-      onSuccess: () => toastStore.pushInfo("Прогон остановлен"),
+      onSuccess: () => toastStore.pushInfo("Запуск остановлен"),
     });
   }
 
@@ -66,7 +66,7 @@ export function RunMonitorPage() {
   if (runQuery.error) {
     return (
       <div className="run-monitor-page">
-        <ErrorBanner error={runQuery.error} title="Не удалось загрузить прогон" />
+        <ErrorBanner error={runQuery.error} title="Не удалось загрузить запуск" />
       </div>
     );
   }
@@ -75,9 +75,15 @@ export function RunMonitorPage() {
     return <div className="run-monitor-page">Загрузка…</div>;
   }
 
+  // RunResponse отдаёт только scenarioId, не имя — имя тянем отдельным запросом (useScenario), а
+  // пока он не готов или сценарий уже удалён, показываем не сырой id, а понятный текст-заглушку.
+  // TODO(backend): если бы RunResponse сразу отдавал scenarioName, эта отдельная загрузка (и риск
+  // навсегда потерять имя удалённого сценария) была бы не нужна — см. заметку в чате про бэкенд-промпт.
+  const scenarioLabel = scenarioQuery.data?.name ?? (scenarioQuery.isLoading ? "Загрузка…" : "Сценарий недоступен");
+
   return (
     <div className="run-monitor-page">
-      <RunHeader scenarioName={scenarioQuery.data?.name} run={runQuery.data} />
+      <RunHeader scenarioName={scenarioLabel} run={runQuery.data} />
       <RunControls
         status={runQuery.data.status}
         onStop={handleStop}

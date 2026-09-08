@@ -3,7 +3,7 @@ import { motion, type HTMLMotionProps } from "framer-motion";
 import clsx from "clsx";
 import "./jellyButton.css";
 
-export type JellyButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+export type JellyButtonVariant = "primary" | "secondary" | "success" | "danger" | "ghost";
 
 // framer-motion переопределяет несколько нативных DOM-событий (onDrag и т.п.) под свою жестовую
 // систему — исключаем их из нативных ButtonHTMLAttributes, чтобы избежать конфликта типов.

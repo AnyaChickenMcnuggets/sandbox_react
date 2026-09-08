@@ -23,7 +23,7 @@ import "./scenarioGraph.css";
 
 // Приблизительные габариты ноды (см. stepNode.css) — используются только для детекции сближения
 // при драге, не для лейаута, точность до пикселя тут не нужна.
-const NODE_WIDTH = 220;
+const NODE_WIDTH = 240;
 const NODE_HEIGHT = 110;
 const COLLISION_MARGIN = 24;
 const BUMP_COOLDOWN_MS = 450;

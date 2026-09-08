@@ -25,7 +25,7 @@ export function AppShell({ children }: AppShellProps) {
             </NavLink>
             <NavLink to="/runs" className={({ isActive }) => `app-nav-link${isActive ? " app-nav-link-active" : ""}`}>
               <IconActivity width={16} height={16} />
-              Прогоны
+              Запуски
             </NavLink>
           </nav>
           <ThemeToggle />

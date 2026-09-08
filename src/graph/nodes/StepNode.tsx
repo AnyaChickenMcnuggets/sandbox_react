@@ -7,6 +7,7 @@ import { STEP_TYPE_LABELS } from "../../lib/runStatus";
 import { StepNodeBadge } from "./StepNodeBadge";
 import { collisionBus } from "../collisionBus";
 import { useRunFromNode } from "../RunFromNodeContext";
+import { IconPlay } from "../../components/jelly/icons";
 import "./stepNode.css";
 
 type AnimationControls = ReturnType<typeof useAnimationControls>;
@@ -143,7 +144,9 @@ export function StepNode({ id, data, selected, dragging }: NodeProps<Node<StepNo
     >
       <Handle type="target" position={Position.Left} />
       <div className="step-node-header">
-        <span className="step-node-type-label">{STEP_TYPE_LABELS[type]}</span>
+        <span className="step-node-type-label" title={STEP_TYPE_LABELS[type]}>
+          {STEP_TYPE_LABELS[type]}
+        </span>
         {runtime ? <StepNodeBadge status={runtime.status} /> : null}
         {canRunFromHere ? (
           <button
@@ -151,8 +154,9 @@ export function StepNode({ id, data, selected, dragging }: NodeProps<Node<StepNo
             className="nodrag step-node-run-from"
             onClick={handleRunFromHere}
             title="Запустить сценарий с этого шага — шаги до него останутся PENDING"
+            aria-label="Запустить с этого шага"
           >
-            ▶ Отсюда
+            <IconPlay width={12} height={12} />
           </button>
         ) : null}
       </div>
@@ -176,7 +180,7 @@ export function StepNode({ id, data, selected, dragging }: NodeProps<Node<StepNo
           )}
           title={
             runtime.orchestratorQueueOwned
-              ? "Очередь создана этим прогоном — будет удалена по Cleanup"
+              ? "Очередь создана этим запуском — будет удалена по Cleanup"
               : "Очередь переиспользована из уже существующей — Cleanup её не тронет"
           }
         >

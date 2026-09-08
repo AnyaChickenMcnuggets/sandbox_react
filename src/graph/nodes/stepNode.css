@@ -1,6 +1,8 @@
 .step-node {
   position: relative;
-  width: 220px;
+  /* 220 → 240: русские фразы-лейблы типов ("Настроить очередь"/"Проверить очередь") рядом со
+     статусным бейджем в шапке ноды не помещались в 220 и обрезались по многоточию. */
+  width: 240px;
   padding: 16px 18px;
   border-radius: var(--jelly-radius-lg);
   /* Микс мармелада и Liquid Glass: обычная желейная тень снизу-справа (объём) + цветное свечение
@@ -79,11 +81,17 @@
 }
 
 .step-node-type-label {
+  /* Раньше был text-transform:uppercase — работало, пока лейблы были короткими английскими словами
+     (JOB/QUEUE). Русские фразы ("Настроить очередь") капсом и шире, и менее естественно смотрятся —
+     обычный регистр к тому же оставляет месте бейджу статуса в той же строке заголовка. */
   font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   opacity: 0.85;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .step-node-name {
@@ -138,12 +146,15 @@
    кнопка с CSS-переходами в том же "стеклянном" духе, что и .step-node-detail. Скрыта, пока по
    ноде не наведён курсор — иначе на каждом сохранённом шаге DAG-холста висела бы лишняя кнопка. */
 .step-node-run-from {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
   border: 1px solid rgb(255 255 255 / 0.4);
   border-radius: var(--jelly-radius-pill);
-  padding: 3px 10px;
-  font-size: 11px;
-  font-weight: 800;
-  font-family: inherit;
+  padding: 0;
   color: inherit;
   cursor: pointer;
   background: rgb(255 255 255 / 0.28);

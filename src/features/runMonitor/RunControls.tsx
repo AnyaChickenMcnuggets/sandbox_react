@@ -18,7 +18,7 @@ export function RunControls({ status, onStop, onCleanup, isStopping, isCleaningU
     <div className="run-controls">
       {!terminal ? (
         <JellyButton variant="danger" onClick={onStop} disabled={isStopping}>
-          {isStopping ? "Останавливаем…" : "Остановить прогон"}
+          {isStopping ? "Останавливаем…" : "Остановить запуск"}
         </JellyButton>
       ) : (
         <JellyButton variant="secondary" onClick={onCleanup} disabled={isCleaningUp}>

@@ -24,22 +24,26 @@ export function RunHistoryRow({ entry }: RunHistoryRowProps) {
   const navigate = useNavigate();
   const { data: run, isLoading, error } = useRun(entry.runId);
 
+  // Запуск недоступен (например, бэкенд его больше не знает — не 404 сам по себе показываем
+  // пользователю, а просто убираем строку из журнала: локальная история в localStorage может
+  // пережить сам запуск на бэкенде, показывать в списке заведомо неоткрываемую строку бессмысленно).
+  if (error) return null;
+
   return (
     <motion.div layout whileHover={{ scale: 1.012, x: 4 }} transition={{ type: "spring", stiffness: 300, damping: 11 }}>
       <Blob radius="md" glass className="run-history-row" onClick={() => navigate(`/runs/${entry.runId}`)}>
         <div className="run-history-row-main">
           <div className="run-history-row-title">{entry.scenarioName}</div>
-          <div className="run-history-row-meta">
-            Прогон #{entry.runId} · запущен {formatDateTime(entry.startedAt)}
-          </div>
+          {/* Запуск — не именованная сущность в бэкенде (нет поля "название"), поэтому вместо
+              технического "#42" показываем время запуска — оно уникально идентифицирует строку
+              для человека не хуже номера. */}
+          <div className="run-history-row-meta">Запущен {formatDateTime(entry.startedAt)}</div>
         </div>
         {isLoading ? (
           <JellyBadge tone="neutral">…</JellyBadge>
-        ) : error || !run ? (
-          <JellyBadge tone="danger">Недоступен</JellyBadge>
-        ) : (
+        ) : run ? (
           <JellyBadge tone={STATUS_TONE[run.status]}>{RUN_STATUS_LABELS[run.status]}</JellyBadge>
-        )}
+        ) : null}
       </Blob>
     </motion.div>
   );

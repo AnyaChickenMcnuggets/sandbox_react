@@ -44,7 +44,7 @@ export function normalizeConfig(type: ScenarioStepType, raw: Record<string, unkn
 }
 
 export const DEFAULT_STEP_NAME: Record<ScenarioStepType, string> = {
-  JOB: "Новый JOB-шаг",
-  QUEUE: "Новый QUEUE-шаг",
-  QUEUE_CHECK: "Новый QUEUE_CHECK-шаг",
+  JOB: "Новое задание",
+  QUEUE: "Новая очередь",
+  QUEUE_CHECK: "Новая проверка очереди",
 };

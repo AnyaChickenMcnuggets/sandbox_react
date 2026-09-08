@@ -25,6 +25,7 @@ import { ConfigPanel } from "../features/scenarioEditor/ConfigPanel/ConfigPanel"
 import { ErrorBanner } from "../components/feedback/ErrorBanner";
 import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
 import { JellyButton } from "../components/jelly/JellyButton";
+import { IconPlay } from "../components/jelly/icons";
 import { toastStore } from "../components/feedback/toastStore";
 import { runHistory } from "../lib/runHistory";
 import "./scenarioEditorPage.css";
@@ -192,7 +193,7 @@ export function ScenarioEditorPage() {
           runHistory.record({
             runId: run.id,
             scenarioId,
-            scenarioName: name.trim() || `Сценарий #${scenarioId}`,
+            scenarioName: name.trim() || "Без названия",
             startedAt: new Date().toISOString(),
           });
           navigate(`/runs/${run.id}`);
@@ -235,8 +236,16 @@ export function ScenarioEditorPage() {
           удалить · выбрать ноду + Ctrl/Cmd+C, Ctrl/Cmd+V — скопировать
         </span>
         {scenarioId ? (
-          <JellyButton size="sm" variant="secondary" onClick={() => handleRun()} disabled={startRun.isPending}>
-            {startRun.isPending ? "Запуск…" : "Запустить"}
+          <JellyButton
+            size="sm"
+            variant="success"
+            iconOnly
+            title={startRun.isPending ? "Запуск…" : "Запустить"}
+            aria-label={startRun.isPending ? "Запуск…" : "Запустить"}
+            onClick={() => handleRun()}
+            disabled={startRun.isPending}
+          >
+            <IconPlay />
           </JellyButton>
         ) : null}
       </div>
@@ -277,7 +286,7 @@ export function ScenarioEditorPage() {
         title="Запустить с этого шага?"
         message={
           pendingRunFrom
-            ? `Прогон начнётся сразу с шага «${pendingRunFrom.stepName}» — все шаги до него останутся в статусе PENDING (движок их не тронет). Убедитесь, что их предпосылки уже выполнены — например, нужные очереди созданы или заполнены — прежде чем продолжить.`
+            ? `Запуск начнётся сразу с шага «${pendingRunFrom.stepName}» — все шаги до него останутся в статусе PENDING (движок их не тронет). Убедитесь, что их предпосылки уже выполнены — например, нужные очереди созданы или заполнены — прежде чем продолжить.`
             : ""
         }
         confirmLabel="Запустить"

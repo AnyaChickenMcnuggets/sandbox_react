@@ -55,8 +55,8 @@ export function ScenarioCard({ scenario, onRun, onDelete, isStarting }: Scenario
               size="sm"
               variant="ghost"
               iconOnly
-              title={`Последний прогон #${lastRun.runId}`}
-              aria-label={`Последний прогон #${lastRun.runId}`}
+              title={`Последний запуск: ${formatDateTime(lastRun.startedAt)}`}
+              aria-label={`Последний запуск: ${formatDateTime(lastRun.startedAt)}`}
               onClick={() => navigate(`/runs/${lastRun.runId}`)}
             >
               <IconActivity />
@@ -74,7 +74,7 @@ export function ScenarioCard({ scenario, onRun, onDelete, isStarting }: Scenario
           </JellyButton>
           <JellyButton
             size="sm"
-            variant="primary"
+            variant="success"
             iconOnly
             title={isStarting ? "Запуск…" : "Запустить"}
             aria-label={isStarting ? "Запуск…" : "Запустить"}
