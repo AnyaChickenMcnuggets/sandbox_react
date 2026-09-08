@@ -8,6 +8,7 @@
 
 .editor-header-fields {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -31,4 +32,84 @@
   font-size: 12px;
   color: var(--danger);
   font-weight: 700;
+}
+
+.editor-header-done {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.editor-header-done:hover {
+  color: var(--text-primary);
+}
+
+/* Свёрнутое состояние — название+описание в одну строку-заголовок вместо двух развёрнутых полей,
+   занимавших высоту холста большую часть времени (форма нужна только в момент правки метаданных). */
+.editor-header-summary {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  margin: 0 -10px;
+  border: none;
+  border-radius: var(--jelly-radius-sm);
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.editor-header-summary:hover {
+  background: color-mix(in srgb, var(--surface-muted) 55%, transparent);
+}
+
+.editor-header-summary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(255 122 156 / 0.4);
+}
+
+.editor-header-summary-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.editor-header-summary:hover .editor-header-summary-icon {
+  color: var(--text-primary);
+}
+
+.editor-header-summary-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.editor-header-summary-name {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editor-header-summary-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.editor-header-summary-desc-empty {
+  opacity: 0.75;
+  font-style: italic;
 }

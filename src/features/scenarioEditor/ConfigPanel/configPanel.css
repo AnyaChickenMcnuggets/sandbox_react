@@ -1,28 +1,54 @@
 /* Обёртка — реальный flex-элемент editor-body: растягивается по высоте строки (align-items:stretch
-   по умолчанию), сама панель внутри уже просто заполняет эту высоту через flex:1. Без этой обёртки
-   .config-panel не мог опереться на "height:100%" от анонимного div-обёртки. */
+   по умолчанию). Ряд (не колонка) — слева ручка ресайза, справа сама панель; обе стретчатся на всю
+   высоту ряда автоматически через тот же align-items:stretch, без явного flex:1 по высоте. */
 .config-panel-wrap {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex-shrink: 0;
   min-height: 0;
 }
 
-/* Высота — от родителя (editor-body), а не calc(100vh - N): захардкоженный вычет из вьюпорта не
-   учитывал реальную высоту строки (шапка/тулбар могут занимать разную высоту), поэтому длинный
-   контент панели (например, развёрнутый JSON-режим транзакций) мог вылезти за пределы .editor-body,
-   у которого нет своего overflow — итог: прокручивалась вся страница вместо самой панели. flex:1 +
-   min-height:0 держат прокрутку внутри панели независимо от того, что происходит выше по разметке.
-   Ширина — resize:horizontal, тот же приём, что и у .jelly-textarea (resize:vertical) для JSON-поля
-   транзакций ниже: перетаскиваемый угол вместо самодельного JS-драга. */
+/* Ручка — на ЛЕВОЙ грани (см. ConfigPanel.tsx): панель справа от холста, тянуть логично именно
+   ближнюю к холсту грань, а не нативный resize-уголок в правом нижнем углу (тот и был раньше —
+   неочевидно для панели, приклеенной к правому краю экрана). */
+.config-panel-resize-handle {
+  flex: 0 0 10px;
+  cursor: ew-resize;
+  touch-action: none;
+  position: relative;
+}
+
+.config-panel-resize-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 44px;
+  border-radius: var(--jelly-radius-pill);
+  background: var(--glass-border);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.config-panel-resize-handle:hover::after,
+.config-panel-resize-handle:active::after {
+  opacity: 1;
+}
+
+/* Высота — от родителя (editor-body через .config-panel-wrap), а не calc(100vh - N): захардкоженный
+   вычет из вьюпорта не учитывал реальную высоту строки (шапка/тулбар могут занимать разную высоту),
+   поэтому длинный контент панели (например, развёрнутый JSON-режим транзакций) мог вылезти за
+   пределы .editor-body, у которого нет своего overflow — итог: прокручивалась вся страница вместо
+   самой панели. min-height:0 + overflow-y:auto держат прокрутку внутри панели независимо от того,
+   что происходит выше по разметке. Ширина — inline style от ScenarioEditorPage (see ConfigPanel.tsx),
+   min/max здесь — подстраховка на случай, если инлайн-стиль почему-то не применится. */
 .config-panel {
-  width: 340px;
   min-width: 280px;
   max-width: 640px;
-  flex: 1;
   min-height: 0;
   overflow-y: auto;
-  resize: horizontal;
 }
 
 .config-panel-header {
@@ -49,16 +75,21 @@
 @media (max-width: 880px) {
   /* Мобильная раскладка складывает editor-body в столбец — панель уже не делит высоту строки с
      холстом, поэтому фиксированный vh-кап + собственный скролл тут уместны (в отличие от десктопа
-     выше), а resize по ширине не имеет смысла на полноширинной панели. */
+     выше), а ресайз по ширине не имеет смысла на полноширинной панели. !important на ширине —
+     иначе inline style="width: …px" от ScenarioEditorPage (выше по специфичности любого обычного
+     правила) перебивал бы эту раскладку. */
   .config-panel-wrap {
     width: 100%;
+    flex-direction: column;
+  }
+
+  .config-panel-resize-handle {
+    display: none;
   }
 
   .config-panel {
-    width: 100%;
+    width: 100% !important;
     max-width: none;
-    flex: none;
     max-height: 70vh;
-    resize: none;
   }
 }

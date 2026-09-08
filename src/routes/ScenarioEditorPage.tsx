@@ -44,6 +44,7 @@ export function ScenarioEditorPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [configPanelWidth, setConfigPanelWidth] = useState(340);
   const [nameError, setNameError] = useState<string | undefined>();
   const [loadedScenarioId, setLoadedScenarioId] = useState<number | undefined>(undefined);
 
@@ -261,6 +262,8 @@ export function ScenarioEditorPage() {
           <ConfigPanel
             nodeId={selectedNode.id}
             data={selectedNode.data}
+            width={configPanelWidth}
+            onWidthChange={setConfigPanelWidth}
             onChangeName={(newName) => updateSelectedNodeData({ name: newName })}
             onChangeConfig={(config) => updateSelectedNodeData({ config })}
             onDelete={handleDeleteSelectedNode}
