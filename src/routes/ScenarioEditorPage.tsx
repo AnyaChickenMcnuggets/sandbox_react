@@ -14,7 +14,7 @@ import { useCreateScenario, useUpdateScenario } from "../queries/scenarioMutatio
 import { useStartRun } from "../queries/runMutations";
 import type { ScenarioStepType } from "../api/types";
 import type { StepNodeData } from "../graph/types";
-import { ScenarioGraph } from "../graph/ScenarioGraph";
+import { ScenarioGraph, NODE_WIDTH, NODE_HEIGHT } from "../graph/ScenarioGraph";
 import { fromScenarioResponse } from "../graph/mapping/fromScenarioResponse";
 import { toScenarioRequest, zipStepIdsWithPositions } from "../graph/mapping/toScenarioRequest";
 import { defaultConfigForType, DEFAULT_STEP_NAME } from "../graph/mapping/stepConfigDefaults";
@@ -27,6 +27,33 @@ import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
 import { toastStore } from "../components/feedback/toastStore";
 import { runHistory } from "../lib/runHistory";
 import "./scenarioEditorPage.css";
+
+const DROP_OVERLAP_MARGIN = 16;
+const DROP_NUDGE_STEP = 36;
+const DROP_NUDGE_MAX_ATTEMPTS = 24;
+
+// Дроп из палитры — точка курсора в момент отпускания, без всякой защиты от попадания прямо на уже
+// существующую ноду. Перекрывшая нода не просто выглядит неряшливо — xyflow рисует edges слоем ПОД
+// nodes, поэтому любое ребро, проходящее в этом месте, прячется под новой нодой целиком или частично
+// (см. NODE_WIDTH/NODE_HEIGHT в ScenarioGraph.tsx). Со стороны пользователя это читалось как "связь
+// не появилась", хотя onConnect отработал корректно — связь просто пряталась под соседним блоком, и
+// становилась видна только после save→reload, когда раскладка пересчитывалась заново. Ищем ближайшую
+// точку по диагонали от желаемой, где новая нода не перекроет ни одну существующую — та же
+// AABB-проверка (по центрам, с запасом), что уже использует collisionBus для детекции сближения при
+// драге, просто до, а не после того, как нода легла на холст.
+function findFreeDropPosition(desired: { x: number; y: number }, nodes: Node<StepNodeData>[]): { x: number; y: number } {
+  let position = desired;
+  for (let attempt = 0; attempt < DROP_NUDGE_MAX_ATTEMPTS; attempt++) {
+    const overlapping = nodes.some(
+      (n) =>
+        Math.abs(position.x - n.position.x) < NODE_WIDTH + DROP_OVERLAP_MARGIN &&
+        Math.abs(position.y - n.position.y) < NODE_HEIGHT + DROP_OVERLAP_MARGIN,
+    );
+    if (!overlapping) return position;
+    position = { x: position.x + DROP_NUDGE_STEP, y: position.y + DROP_NUDGE_STEP };
+  }
+  return position;
+}
 
 export function ScenarioEditorPage() {
   const params = useParams<{ scenarioId: string }>();
@@ -68,18 +95,20 @@ export function ScenarioEditorPage() {
   const handleDropStepType = useCallback(
     (type: ScenarioStepType, position: { x: number; y: number }) => {
       const localId = nanoid();
-      const newNode: Node<StepNodeData> = {
-        id: localId,
-        type: "step",
-        position,
-        data: {
-          localId,
-          type,
-          name: DEFAULT_STEP_NAME[type],
-          config: defaultConfigForType(type),
-        },
-      };
-      setNodes((nds) => [...nds, newNode]);
+      setNodes((nds) => {
+        const newNode: Node<StepNodeData> = {
+          id: localId,
+          type: "step",
+          position: findFreeDropPosition(position, nds),
+          data: {
+            localId,
+            type,
+            name: DEFAULT_STEP_NAME[type],
+            config: defaultConfigForType(type),
+          },
+        };
+        return [...nds, newNode];
+      });
       setSelectedNodeId(localId);
     },
     [setNodes],
@@ -213,6 +242,10 @@ export function ScenarioEditorPage() {
   }
 
   const isSaving = createScenario.isPending || updateScenario.isPending;
+  // Последний запуск ЭТОГО сценария (успешный, ещё выполняющийся — без разницы) — тот же локальный
+  // журнал, что уже используется на ScenarioCard в списке сценариев, здесь просто вторая точка входа
+  // к нему прямо из редактора.
+  const lastRun = scenarioId !== undefined ? runHistory.lastForScenario(scenarioId) : undefined;
 
   return (
     <div className="editor-page">
@@ -226,6 +259,7 @@ export function ScenarioEditorPage() {
         nameError={nameError}
         onRun={scenarioId ? () => handleRun() : undefined}
         isStarting={startRun.isPending}
+        onOpenLastRun={lastRun ? () => navigate(`/runs/${lastRun.runId}`) : undefined}
       />
 
       {scenarioId && scenarioQuery.error ? <ErrorBanner error={scenarioQuery.error} title="Не удалось загрузить сценарий" /> : null}

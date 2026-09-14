@@ -1,0 +1,44 @@
+.robots-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border-radius: var(--jelly-radius-pill);
+  font-size: 12px;
+  font-weight: 800;
+  background: color-mix(in srgb, var(--surface-muted) 55%, transparent);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+
+/* Лампочка — currentColor, чтобы цвет точки и обводки/свечения управлялись одним объявлением
+   (см. .robots-indicator-ok/-blocked ниже), плюс тот же "дышащий" пульс, что уже используется у
+   рёбер графа (jelly-edge-breathe) — читается как живой индикатор, а не статичная точка. */
+@keyframes robots-lamp-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 3px 1px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 8px 2px currentColor;
+  }
+}
+
+.robots-indicator-lamp {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: robots-lamp-glow 2.2s ease-in-out infinite;
+}
+
+.robots-indicator-ok {
+  color: var(--status-succeeded-dark);
+}
+
+.robots-indicator-blocked {
+  color: var(--status-failed-dark);
+}

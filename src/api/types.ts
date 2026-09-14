@@ -128,6 +128,16 @@ export interface QueueItemResponse {
   lastEventText: string | null;
 }
 
+export interface RobotsAvailabilityResponse {
+  freeRobots: number;
+  totalRobots: number;
+  minFreeRobots: number;
+  // Вычисляется бэкендом тем же кодом, что и реальная проверка при POST /run — можно дизейблить
+  // кнопку "Запустить" прямо по этому полю, не пересчитывая условие самостоятельно. Не резервирует
+  // роботов — доступность между опросом и кликом может измениться (см. 409 на POST /run).
+  launchAllowed: boolean;
+}
+
 export interface ErrorResponse {
   code: string;
   message: string;

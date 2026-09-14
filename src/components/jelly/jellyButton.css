@@ -20,9 +20,13 @@
   border: 1px solid var(--glass-border);
 }
 
+/* grayscale, не только пониженная opacity — на насыщенном цветном "стекле" (особенно success/
+   зелёный) простое затемнение всё ещё читалось как "активная кнопка, просто в тени", а не как
+   явно недоступная. */
 .jelly-button:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.5;
+  filter: grayscale(0.85);
   box-shadow: none;
 }
 

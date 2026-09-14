@@ -2,7 +2,9 @@ import { useState } from "react";
 import { JellyPanel } from "../../components/jelly/JellyPanel";
 import { JellyInput, JellyTextarea } from "../../components/jelly/JellyInput";
 import { JellyButton } from "../../components/jelly/JellyButton";
-import { IconPlay, IconSave } from "../../components/jelly/icons";
+import { IconActivity, IconPlay, IconSave } from "../../components/jelly/icons";
+import { RobotsAvailabilityIndicator } from "../../components/feedback/RobotsAvailabilityIndicator";
+import { formatRobotsAvailability, useRobotsAvailability } from "../../queries/orchestratorQueries";
 import "./editorHeader.css";
 
 interface EditorHeaderProps {
@@ -16,6 +18,9 @@ interface EditorHeaderProps {
   // Запуск возможен только у уже сохранённого сценария (нужен scenarioId) — см. ScenarioEditorPage.
   onRun?: () => void;
   isStarting: boolean;
+  // Переход к последнему запуску ЭТОГО сценария (успешному или ещё выполняющемуся — без разницы) —
+  // есть, только если такой запуск уже когда-то был зафиксирован в локальном журнале (runHistory).
+  onOpenLastRun?: () => void;
 }
 
 export function EditorHeader({
@@ -28,6 +33,7 @@ export function EditorHeader({
   nameError,
   onRun,
   isStarting,
+  onOpenLastRun,
 }: EditorHeaderProps) {
   // Название/описание редактируются раз в синюю луну (в отличие от конфига шагов) — два больших
   // поля были всегда развёрнуты и отъедали высоту у холста без пользы большую часть времени.
@@ -36,6 +42,12 @@ export function EditorHeader({
   // если пользователь до этого её свернул.
   const [isEditing, setIsEditing] = useState(false);
   const editing = isEditing || !!nameError;
+
+  // Пока данные не загрузились/эндпоинт недоступен — не блокируем кнопку сами, это только
+  // проактивная подсказка поверх реальной защиты на бэкенде (409 на POST /run остаётся как fallback
+  // именно на этот случай и на гонку между опросом и кликом).
+  const { data: robots } = useRobotsAvailability();
+  const launchBlocked = robots ? !robots.launchAllowed : false;
 
   return (
     // Сохранить/Запустить и подсказка по холсту раньше жили в отдельном .editor-toolbar-row под
@@ -83,6 +95,17 @@ export function EditorHeader({
         )}
 
         <div className="editor-header-actions">
+          {onOpenLastRun ? (
+            <JellyButton
+              iconOnly
+              variant="secondary"
+              title="Последний запуск"
+              aria-label="Последний запуск"
+              onClick={onOpenLastRun}
+            >
+              <IconActivity />
+            </JellyButton>
+          ) : null}
           <JellyButton
             iconOnly
             title={isSaving ? "Сохранение…" : "Сохранить"}
@@ -92,14 +115,15 @@ export function EditorHeader({
           >
             <IconSave />
           </JellyButton>
+          {onRun ? <RobotsAvailabilityIndicator /> : null}
           {onRun ? (
             <JellyButton
               iconOnly
               variant="success"
-              title={isStarting ? "Запуск…" : "Запустить"}
-              aria-label={isStarting ? "Запуск…" : "Запустить"}
+              title={isStarting ? "Запуск…" : launchBlocked && robots ? formatRobotsAvailability(robots) : "Запустить"}
+              aria-label={isStarting ? "Запуск…" : launchBlocked && robots ? formatRobotsAvailability(robots) : "Запустить"}
               onClick={onRun}
-              disabled={isStarting}
+              disabled={isStarting || launchBlocked}
             >
               <IconPlay />
             </JellyButton>

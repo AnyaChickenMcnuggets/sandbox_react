@@ -16,6 +16,13 @@
   margin-bottom: 32px;
 }
 
+.scenario-list-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
 .scenario-list-toolbar h1 {
   margin: 0;
   font-size: 28px;

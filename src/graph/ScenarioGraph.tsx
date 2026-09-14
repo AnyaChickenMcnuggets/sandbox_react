@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -21,10 +21,13 @@ import { collisionBus } from "./collisionBus";
 import { RunFromNodeContext } from "./RunFromNodeContext";
 import "./scenarioGraph.css";
 
-// Приблизительные габариты ноды (см. stepNode.css) — используются только для детекции сближения
-// при драге, не для лейаута, точность до пикселя тут не нужна.
-const NODE_WIDTH = 240;
-const NODE_HEIGHT = 110;
+// Приблизительные габариты ноды (см. stepNode.css: width: 240px; высота — авто по контенту,
+// 110 — грубая оценка типичной ноды) — используются для детекции сближения при драге и (см.
+// ScenarioEditorPage.handleDropStepType) чтобы не давать двум нодам лечь друг на друга при дропе
+// из палитры: перекрывающая нода прячет под собой рёбра, проходящие в этом месте (xyflow рисует
+// edges слоем под nodes) — со стороны выглядит как "соединение не появилось", хотя оно есть.
+export const NODE_WIDTH = 240;
+export const NODE_HEIGHT = 110;
 const COLLISION_MARGIN = 24;
 const BUMP_COOLDOWN_MS = 450;
 
@@ -94,13 +97,21 @@ function ScenarioGraphInner({
 
   // Рёбра, инцидентные перетаскиваемой ноде, получают data.nodeDragging — JellyEdge реагирует
   // на это как на натянутую резинку (см. jellyEdge.css), а не просто рисует статичную линию.
-  const edgesWithState = edges.map((edge) => ({
-    ...edge,
-    data: {
-      ...edge.data,
-      nodeDragging: isEdit && draggingNodeId !== null && (edge.source === draggingNodeId || edge.target === draggingNodeId),
-    },
-  }));
+  // useMemo — без него этот .map() пересоздавал ВСЕ edge-объекты на любой ре-рендер родителя (в
+  // мониторе — на каждый тик поллинга, раз в 2.5с), заставляя реконсилировать все JellyEdge заново
+  // без необходимости; сама "рваная" анимация бегущего пунктира это уже не вызывает (см. FLOW_ANIMATE
+  // в JellyEdge.tsx), но лишняя работа на каждый тик всё равно ни к чему.
+  const edgesWithState = useMemo(
+    () =>
+      edges.map((edge) => ({
+        ...edge,
+        data: {
+          ...edge.data,
+          nodeDragging: isEdit && draggingNodeId !== null && (edge.source === draggingNodeId || edge.target === draggingNodeId),
+        },
+      })),
+    [edges, isEdit, draggingNodeId],
+  );
 
   return (
     <div className="scenario-graph-wrapper" ref={wrapperRef} onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}>

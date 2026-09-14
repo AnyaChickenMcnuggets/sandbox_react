@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import type { RunResponse } from "../../api/types";
 import { JellyPanel } from "../../components/jelly/JellyPanel";
 import { JellyBadge } from "../../components/jelly/JellyBadge";
+import { JellyButton } from "../../components/jelly/JellyButton";
+import { IconEdit } from "../../components/jelly/icons";
 import { RUN_STATUS_LABELS } from "../../lib/runStatus";
 import { formatDuration, formatTime } from "../../lib/dates";
 import "./runHeader.css";
@@ -22,6 +25,8 @@ interface RunHeaderProps {
 }
 
 export function RunHeader({ scenarioName, run }: RunHeaderProps) {
+  const navigate = useNavigate();
+
   // startStepId — запуск не с корней DAG, а с конкретного шага ("Запустить отсюда" в редакторе);
   // шаги до него остаются PENDING весь прогон, это не баг. Имя шага берём из steps[] по stepId — тот
   // же массив, что и статусы, отдельного поля stepName на самом RunResponse нет.
@@ -30,13 +35,25 @@ export function RunHeader({ scenarioName, run }: RunHeaderProps) {
   return (
     <JellyPanel radius="lg" className="run-header">
       <div className="run-header-top">
-        <div>
-          <div className="run-header-title">{scenarioName}</div>
-          {/* Запуск — не именованная сущность (нет поля "название" на RunResponse), поэтому вместо
-              технического "Прогон #N" — либо повод старта с конкретного шага, либо ничего лишнего:
-              время старта и так есть в таймлайне ниже. */}
-          <div className="run-header-subtitle">
-            {run.startStepId != null ? `Запущено с шага «${startStep?.stepName ?? "неизвестного"}»` : "Запуск сценария"}
+        <div className="run-header-title-row">
+          <JellyButton
+            iconOnly
+            size="sm"
+            variant="secondary"
+            title="Открыть сценарий"
+            aria-label="Открыть сценарий"
+            onClick={() => navigate(`/scenarios/${run.scenarioId}/edit`)}
+          >
+            <IconEdit width={15} height={15} />
+          </JellyButton>
+          <div>
+            <div className="run-header-title">{scenarioName}</div>
+            {/* Запуск — не именованная сущность (нет поля "название" на RunResponse), поэтому вместо
+                технического "Прогон #N" — либо повод старта с конкретного шага, либо ничего лишнего:
+                время старта и так есть в таймлайне ниже. */}
+            <div className="run-header-subtitle">
+              {run.startStepId != null ? `Запущено с шага «${startStep?.stepName ?? "неизвестного"}»` : "Запуск сценария"}
+            </div>
           </div>
         </div>
         <motion.div key={run.status} initial={{ scale: 0.7 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 16 }}>

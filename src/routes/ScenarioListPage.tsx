@@ -8,6 +8,7 @@ import type { ScenarioResponse } from "../api/types";
 import { ScenarioCard } from "../features/scenarioList/ScenarioCard";
 import { JellyButton } from "../components/jelly/JellyButton";
 import { ErrorBanner } from "../components/feedback/ErrorBanner";
+import { RobotsAvailabilityIndicator } from "../components/feedback/RobotsAvailabilityIndicator";
 import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
 import { toastStore } from "../components/feedback/toastStore";
 import { runHistory } from "../lib/runHistory";
@@ -53,7 +54,10 @@ export function ScenarioListPage() {
           <h1>Сценарии</h1>
           <p className="scenario-list-subtitle">DAG-сценарии тестирования RPA-процессов</p>
         </div>
-        <JellyButton onClick={() => navigate("/scenarios/new")}>+ Новый сценарий</JellyButton>
+        <div className="scenario-list-toolbar-actions">
+          <RobotsAvailabilityIndicator />
+          <JellyButton onClick={() => navigate("/scenarios/new")}>+ Новый сценарий</JellyButton>
+        </div>
       </div>
 
       {error ? <ErrorBanner error={error} title="Не удалось загрузить список сценариев" /> : null}
