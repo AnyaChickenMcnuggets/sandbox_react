@@ -1,0 +1,32 @@
+.admin-users-page {
+  max-width: min(1400px, 92vw);
+  width: 100%;
+  margin: 0 auto;
+}
+
+.admin-users-toolbar {
+  margin-bottom: 24px;
+}
+
+.admin-users-toolbar h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.admin-users-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+}
+
+.admin-users-loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.admin-users-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

@@ -5,4 +5,5 @@ export const queryKeys = {
   queueItems: (runId: number, stepId: number, pageNumber: number) =>
     ["runs", runId, "steps", stepId, "queue-items", pageNumber] as const,
   robotsAvailability: ["orchestrator", "robots-availability"] as const,
+  users: ["admin", "users"] as const,
 };

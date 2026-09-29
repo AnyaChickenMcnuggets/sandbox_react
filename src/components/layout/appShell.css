@@ -79,6 +79,22 @@
   color: var(--text-primary);
 }
 
+.app-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-user-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .app-logo-blob {
   display: inline-flex;
   align-items: center;

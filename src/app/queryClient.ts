@@ -14,7 +14,9 @@ export const queryClient = new QueryClient({
     },
   }),
   mutationCache: new MutationCache({
-    onError: (error) => {
+    onError: (error, _vars, _ctx, mutation) => {
+      const meta = mutation.meta as SilentMeta | undefined;
+      if (meta?.silent) return; // логин сам показывает ошибку инлайн под полем, не тостом
       toastStore.pushError(error);
     },
   }),

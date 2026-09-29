@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
-import { Link, NavLink } from "react-router-dom";
-import { IconActivity } from "../jelly/icons";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { IconActivity, IconLogout, IconUsers } from "../jelly/icons";
+import { JellyButton } from "../jelly/JellyButton";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAuthSession } from "../../lib/authStore";
+import { useLogout } from "../../queries/authMutations";
+import { canManageUsers } from "../../lib/roles";
 import "./appShell.css";
 
 interface AppShellProps {
@@ -9,6 +13,14 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const session = useAuthSession();
+  const navigate = useNavigate();
+  const logout = useLogout();
+
+  function handleLogout() {
+    logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) });
+  }
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -27,7 +39,29 @@ export function AppShell({ children }: AppShellProps) {
               <IconActivity width={16} height={16} />
               Запуски
             </NavLink>
+            {session && canManageUsers(session.role) ? (
+              <NavLink to="/admin/users" className={({ isActive }) => `app-nav-link${isActive ? " app-nav-link-active" : ""}`}>
+                <IconUsers width={16} height={16} />
+                Пользователи
+              </NavLink>
+            ) : null}
           </nav>
+          {session ? (
+            <div className="app-user">
+              <span className="app-user-name">{session.username}</span>
+              <JellyButton
+                iconOnly
+                size="sm"
+                variant="ghost"
+                title="Выйти"
+                aria-label="Выйти"
+                onClick={handleLogout}
+                disabled={logout.isPending}
+              >
+                <IconLogout />
+              </JellyButton>
+            </div>
+          ) : null}
           <ThemeToggle />
         </div>
       </header>

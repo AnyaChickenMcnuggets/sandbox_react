@@ -4,11 +4,11 @@ import type { ScenarioResponse } from "../../api/types";
 import { Blob } from "../../components/jelly/Blob";
 import { JellyButton } from "../../components/jelly/JellyButton";
 import { JellyBadge } from "../../components/jelly/JellyBadge";
-import { IconEdit, IconPlay, IconTrash, IconActivity } from "../../components/jelly/icons";
+import { IconEdit, IconTrash, IconActivity } from "../../components/jelly/icons";
+import { RunLaunchButton } from "../../components/feedback/RunLaunchButton";
 import { formatDateTime } from "../../lib/dates";
 import { STEP_TYPE_LABELS } from "../../lib/runStatus";
 import { runHistory } from "../../lib/runHistory";
-import { formatRobotsAvailability, useRobotsAvailability } from "../../queries/orchestratorQueries";
 import "./scenarioCard.css";
 
 interface ScenarioCardProps {
@@ -16,6 +16,8 @@ interface ScenarioCardProps {
   onRun: (scenario: ScenarioResponse) => void;
   onDelete: (scenario: ScenarioResponse) => void;
   isStarting: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
 const TYPE_TONE: Record<string, "job" | "queue" | "queueCheck"> = {
@@ -24,14 +26,9 @@ const TYPE_TONE: Record<string, "job" | "queue" | "queueCheck"> = {
   QUEUE_CHECK: "queueCheck",
 };
 
-export function ScenarioCard({ scenario, onRun, onDelete, isStarting }: ScenarioCardProps) {
+export function ScenarioCard({ scenario, onRun, onDelete, isStarting, canEdit, canDelete }: ScenarioCardProps) {
   const navigate = useNavigate();
   const lastRun = runHistory.lastForScenario(scenario.id);
-  // Пока данные о свободных роботах не загрузились/эндпоинт недоступен — не блокируем кнопку сами,
-  // это только проактивная подсказка поверх реальной защиты на бэкенде (409 на POST /run остаётся
-  // как fallback именно на этот случай и на гонку между опросом и кликом).
-  const { data: robots } = useRobotsAvailability();
-  const launchBlocked = robots ? !robots.launchAllowed : false;
   const stepTypeCounts = scenario.steps.reduce<Record<string, number>>((acc, step) => {
     acc[step.type] = (acc[step.type] ?? 0) + 1;
     return acc;
@@ -68,37 +65,31 @@ export function ScenarioCard({ scenario, onRun, onDelete, isStarting }: Scenario
               <IconActivity />
             </JellyButton>
           ) : null}
-          <JellyButton
-            size="sm"
-            variant="secondary"
-            iconOnly
-            title="Редактировать"
-            aria-label="Редактировать"
-            onClick={() => navigate(`/scenarios/${scenario.id}/edit`)}
-          >
-            <IconEdit />
-          </JellyButton>
-          <JellyButton
-            size="sm"
-            variant="success"
-            iconOnly
-            title={isStarting ? "Запуск…" : launchBlocked && robots ? formatRobotsAvailability(robots) : "Запустить"}
-            aria-label={isStarting ? "Запуск…" : launchBlocked && robots ? formatRobotsAvailability(robots) : "Запустить"}
-            onClick={() => onRun(scenario)}
-            disabled={isStarting || launchBlocked}
-          >
-            <IconPlay />
-          </JellyButton>
-          <JellyButton
-            size="sm"
-            variant="danger"
-            iconOnly
-            title="Удалить"
-            aria-label="Удалить"
-            onClick={() => onDelete(scenario)}
-          >
-            <IconTrash />
-          </JellyButton>
+          {canEdit ? (
+            <JellyButton
+              size="sm"
+              variant="secondary"
+              iconOnly
+              title="Редактировать"
+              aria-label="Редактировать"
+              onClick={() => navigate(`/scenarios/${scenario.id}/edit`)}
+            >
+              <IconEdit />
+            </JellyButton>
+          ) : null}
+          {canEdit ? <RunLaunchButton size="sm" isStarting={isStarting} onClick={() => onRun(scenario)} /> : null}
+          {canDelete ? (
+            <JellyButton
+              size="sm"
+              variant="danger"
+              iconOnly
+              title="Удалить"
+              aria-label="Удалить"
+              onClick={() => onDelete(scenario)}
+            >
+              <IconTrash />
+            </JellyButton>
+          ) : null}
         </div>
       </Blob>
     </motion.div>

@@ -12,6 +12,8 @@ import { RunControls } from "../features/runMonitor/RunControls";
 import { QueueItemsDrawer } from "../features/runMonitor/QueueItemsDrawer";
 import { ErrorBanner } from "../components/feedback/ErrorBanner";
 import { toastStore } from "../components/feedback/toastStore";
+import { useAuthSession } from "../lib/authStore";
+import { canEditScenarios } from "../lib/roles";
 import "./runMonitorPage.css";
 
 export function RunMonitorPage() {
@@ -24,6 +26,8 @@ export function RunMonitorPage() {
 
   const stopRun = useStopRun();
   const cleanupScenario = useCleanupScenario();
+  const session = useAuthSession();
+  const canControl = session !== null && canEditScenarios(session.role);
 
   const [selectedQueueStep, setSelectedQueueStep] = useState<{ stepId: number; stepName: string } | null>(null);
 
@@ -84,13 +88,15 @@ export function RunMonitorPage() {
   return (
     <div className="run-monitor-page">
       <RunHeader scenarioName={scenarioLabel} run={runQuery.data} />
-      <RunControls
-        status={runQuery.data.status}
-        onStop={handleStop}
-        onCleanup={handleCleanup}
-        isStopping={stopRun.isPending}
-        isCleaningUp={cleanupScenario.isPending}
-      />
+      {canControl ? (
+        <RunControls
+          status={runQuery.data.status}
+          onStop={handleStop}
+          onCleanup={handleCleanup}
+          isStopping={stopRun.isPending}
+          isCleaningUp={cleanupScenario.isPending}
+        />
+      ) : null}
 
       <div className="run-monitor-body">
         <div className="run-monitor-canvas">

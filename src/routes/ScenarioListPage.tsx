@@ -12,6 +12,8 @@ import { RobotsAvailabilityIndicator } from "../components/feedback/RobotsAvaila
 import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
 import { toastStore } from "../components/feedback/toastStore";
 import { runHistory } from "../lib/runHistory";
+import { useAuthSession } from "../lib/authStore";
+import { canDeleteScenarios, canEditScenarios } from "../lib/roles";
 import "./scenarioListPage.css";
 
 export function ScenarioListPage() {
@@ -20,6 +22,8 @@ export function ScenarioListPage() {
   const deleteScenario = useDeleteScenario();
   const startRun = useStartRun();
   const [pendingDelete, setPendingDelete] = useState<ScenarioResponse | null>(null);
+  const session = useAuthSession();
+  const canEdit = session !== null && canEditScenarios(session.role);
 
   function handleRun(scenario: ScenarioResponse) {
     startRun.mutate(
@@ -56,7 +60,7 @@ export function ScenarioListPage() {
         </div>
         <div className="scenario-list-toolbar-actions">
           <RobotsAvailabilityIndicator />
-          <JellyButton onClick={() => navigate("/scenarios/new")}>+ Новый сценарий</JellyButton>
+          {canEdit ? <JellyButton onClick={() => navigate("/scenarios/new")}>+ Новый сценарий</JellyButton> : null}
         </div>
       </div>
 
@@ -79,6 +83,8 @@ export function ScenarioListPage() {
               onRun={handleRun}
               onDelete={setPendingDelete}
               isStarting={startRun.isPending && startRun.variables?.scenarioId === scenario.id}
+              canEdit={canEdit}
+              canDelete={session !== null && canDeleteScenarios(session.role)}
             />
           ))}
         </motion.div>

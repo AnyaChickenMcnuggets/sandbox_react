@@ -1,6 +1,11 @@
 import type { ErrorResponse } from "./types";
+import { authStore } from "../lib/authStore";
 
 const API_BASE = "/api/v1";
+// Единственные эндпоинты без Authorization (Sprint 26) — /auth/login тоже 401-ит на неверный
+// пароль, но это не "просрочен токен", ретраить через /auth/refresh тут не нужно и не нужно
+// пытаться (см. request() ниже).
+const PUBLIC_PATH_PREFIX = "/auth/";
 
 export class ApiError extends Error implements ErrorResponse {
   readonly code: string;
@@ -56,10 +61,19 @@ function buildUrl(path: string, query?: RequestOptions["query"]): string {
   return qs ? `${url}?${qs}` : url;
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+// Без авто-refresh-на-401 — request() (ниже) оборачивает это retry-логикой; сам rawRequest
+// переиспользуется и для вызова /auth/refresh, которому только предстоит эту логику включать в
+// себя, а не участвовать в ней (иначе просроченный refresh-токен ретраил бы сам себя бесконечно).
+async function rawRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const isPublic = path.startsWith(PUBLIC_PATH_PREFIX);
+  const session = authStore.get();
+  const headers: Record<string, string> = {};
+  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+  if (!isPublic && session) headers.Authorization = `Bearer ${session.accessToken}`;
+
   const res = await fetch(buildUrl(path, options.query), {
     method: options.method ?? "GET",
-    headers: options.body !== undefined ? { "Content-Type": "application/json" } : undefined,
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
@@ -73,6 +87,51 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   return (await res.json()) as T;
+}
+
+// Параллельные 401 (например несколько поллингов сразу) не должны бить /auth/refresh N раз —
+// все ждут один и тот же полёт, реузультат которого разделяют.
+let refreshInFlight: Promise<boolean> | null = null;
+
+function refreshSession(): Promise<boolean> {
+  const session = authStore.get();
+  if (!session) return Promise.resolve(false);
+
+  if (!refreshInFlight) {
+    refreshInFlight = rawRequest<{ accessToken: string; refreshToken: string }>("/auth/refresh", {
+      method: "POST",
+      body: { refreshToken: session.refreshToken },
+    })
+      .then((tokens) => {
+        authStore.updateTokens(tokens);
+        return true;
+      })
+      .catch(() => {
+        // Просроченный/уже использованный/отозванный refresh-токен — штатный разлогин, не зацикливать.
+        authStore.clear();
+        return false;
+      })
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+}
+
+// Рекомендованная бэкендом логика: на 401 (кроме /auth/*) — один раз попробовать /auth/refresh,
+// при успехе повторить исходный запрос с новым accessToken; при неудаче — ошибка всплывает как
+// обычно (authStore уже очищен внутри refreshSession, AppRoutes сама переключит на /login).
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  try {
+    return await rawRequest<T>(path, options);
+  } catch (err) {
+    const isPublic = path.startsWith(PUBLIC_PATH_PREFIX);
+    if (err instanceof ApiError && err.status === 401 && !isPublic) {
+      const refreshed = await refreshSession();
+      if (refreshed) return rawRequest<T>(path, options);
+    }
+    throw err;
+  }
 }
 
 export const apiClient = {

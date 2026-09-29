@@ -78,7 +78,8 @@ export interface ScenarioResponse {
 }
 
 export interface RunRequest {
-  triggeredBy?: string | null;
+  // triggeredBy убран (Sprint 26) — бэкенд больше не принимает его от клиента, сам берёт имя из
+  // токена аутентификации.
   // Запуск с произвольного шага DAG вместо корней — шаги "до" точки старта остаются PENDING до
   // конца прогона (движок их не трогает). Фронт не валидирует принадлежность/существование шага —
   // это делает бэкенд (404/400), фронт только явно предупреждает пользователя перед запуском.
@@ -142,4 +143,55 @@ export interface ErrorResponse {
   code: string;
   message: string;
   details: string[];
+}
+
+// --- Аутентификация (Sprint 26) ---------------------------------------------------------------
+
+export type UserRole = "VIEWER" | "OPERATOR" | "ADMIN";
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface TokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresInSeconds: number;
+}
+
+export interface RefreshRequest {
+  refreshToken: string;
+}
+
+export interface LogoutRequest {
+  refreshToken: string;
+}
+
+// Роль пользователя сюда не входит — сервер отдаёт её только внутри claim'а access-токена, не
+// отдельным полем (см. lib/jwt.ts, decodeJwtRole).
+export interface UserResponse {
+  id: number;
+  username: string;
+  role: UserRole;
+  enabled: boolean;
+  createdAt: string; // OffsetDateTime
+}
+
+export interface CreateUserRequest {
+  username: string;
+  password: string;
+  role: UserRole;
+}
+
+export interface UpdateRoleRequest {
+  role: UserRole;
+}
+
+export interface UpdateEnabledRequest {
+  enabled: boolean;
+}
+
+export interface ResetPasswordRequest {
+  newPassword: string;
 }

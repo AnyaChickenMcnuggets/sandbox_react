@@ -18,16 +18,10 @@ import { edgeTypes } from "./edgeTypes";
 import type { StepNodeData } from "./types";
 import type { ScenarioStepType } from "../api/types";
 import { collisionBus } from "./collisionBus";
+import { boxesOverlap } from "./layout/collision";
 import { RunFromNodeContext } from "./RunFromNodeContext";
 import "./scenarioGraph.css";
 
-// Приблизительные габариты ноды (см. stepNode.css: width: 240px; высота — авто по контенту,
-// 110 — грубая оценка типичной ноды) — используются для детекции сближения при драге и (см.
-// ScenarioEditorPage.handleDropStepType) чтобы не давать двум нодам лечь друг на друга при дропе
-// из палитры: перекрывающая нода прячет под собой рёбра, проходящие в этом месте (xyflow рисует
-// edges слоем под nodes) — со стороны выглядит как "соединение не появилось", хотя оно есть.
-export const NODE_WIDTH = 240;
-export const NODE_HEIGHT = 110;
 const COLLISION_MARGIN = 24;
 const BUMP_COOLDOWN_MS = 450;
 
@@ -74,17 +68,10 @@ function ScenarioGraphInner({
   // чтобы не дёргать анимацию на каждый кадр драга, пока ноды перекрываются.
   function handleNodeDrag(_event: unknown, draggedNode: Node<StepNodeData>) {
     const now = performance.now();
-    const draggedCenterX = draggedNode.position.x + NODE_WIDTH / 2;
-    const draggedCenterY = draggedNode.position.y + NODE_HEIGHT / 2;
 
     for (const other of nodes) {
       if (other.id === draggedNode.id) continue;
-      const otherCenterX = other.position.x + NODE_WIDTH / 2;
-      const otherCenterY = other.position.y + NODE_HEIGHT / 2;
-      const overlapping =
-        Math.abs(draggedCenterX - otherCenterX) < NODE_WIDTH + COLLISION_MARGIN &&
-        Math.abs(draggedCenterY - otherCenterY) < NODE_HEIGHT + COLLISION_MARGIN;
-      if (!overlapping) continue;
+      if (!boxesOverlap(draggedNode.position, other.position, COLLISION_MARGIN)) continue;
 
       const lastBump = lastBumpRef.current.get(other.id) ?? 0;
       if (now - lastBump < BUMP_COOLDOWN_MS) continue;

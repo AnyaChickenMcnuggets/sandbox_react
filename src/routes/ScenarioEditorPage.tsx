@@ -14,7 +14,8 @@ import { useCreateScenario, useUpdateScenario } from "../queries/scenarioMutatio
 import { useStartRun } from "../queries/runMutations";
 import type { ScenarioStepType } from "../api/types";
 import type { StepNodeData } from "../graph/types";
-import { ScenarioGraph, NODE_WIDTH, NODE_HEIGHT } from "../graph/ScenarioGraph";
+import { ScenarioGraph } from "../graph/ScenarioGraph";
+import { findFreeDropPosition } from "../graph/layout/collision";
 import { fromScenarioResponse } from "../graph/mapping/fromScenarioResponse";
 import { toScenarioRequest, zipStepIdsWithPositions } from "../graph/mapping/toScenarioRequest";
 import { defaultConfigForType, DEFAULT_STEP_NAME } from "../graph/mapping/stepConfigDefaults";
@@ -26,34 +27,11 @@ import { ErrorBanner } from "../components/feedback/ErrorBanner";
 import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
 import { toastStore } from "../components/feedback/toastStore";
 import { runHistory } from "../lib/runHistory";
+import { useAuthSession } from "../lib/authStore";
+import { canEditScenarios } from "../lib/roles";
 import "./scenarioEditorPage.css";
 
 const DROP_OVERLAP_MARGIN = 16;
-const DROP_NUDGE_STEP = 36;
-const DROP_NUDGE_MAX_ATTEMPTS = 24;
-
-// Дроп из палитры — точка курсора в момент отпускания, без всякой защиты от попадания прямо на уже
-// существующую ноду. Перекрывшая нода не просто выглядит неряшливо — xyflow рисует edges слоем ПОД
-// nodes, поэтому любое ребро, проходящее в этом месте, прячется под новой нодой целиком или частично
-// (см. NODE_WIDTH/NODE_HEIGHT в ScenarioGraph.tsx). Со стороны пользователя это читалось как "связь
-// не появилась", хотя onConnect отработал корректно — связь просто пряталась под соседним блоком, и
-// становилась видна только после save→reload, когда раскладка пересчитывалась заново. Ищем ближайшую
-// точку по диагонали от желаемой, где новая нода не перекроет ни одну существующую — та же
-// AABB-проверка (по центрам, с запасом), что уже использует collisionBus для детекции сближения при
-// драге, просто до, а не после того, как нода легла на холст.
-function findFreeDropPosition(desired: { x: number; y: number }, nodes: Node<StepNodeData>[]): { x: number; y: number } {
-  let position = desired;
-  for (let attempt = 0; attempt < DROP_NUDGE_MAX_ATTEMPTS; attempt++) {
-    const overlapping = nodes.some(
-      (n) =>
-        Math.abs(position.x - n.position.x) < NODE_WIDTH + DROP_OVERLAP_MARGIN &&
-        Math.abs(position.y - n.position.y) < NODE_HEIGHT + DROP_OVERLAP_MARGIN,
-    );
-    if (!overlapping) return position;
-    position = { x: position.x + DROP_NUDGE_STEP, y: position.y + DROP_NUDGE_STEP };
-  }
-  return position;
-}
 
 export function ScenarioEditorPage() {
   const params = useParams<{ scenarioId: string }>();
@@ -64,6 +42,13 @@ export function ScenarioEditorPage() {
   const createScenario = useCreateScenario();
   const updateScenario = useUpdateScenario(scenarioId ?? -1);
   const startRun = useStartRun();
+  const session = useAuthSession();
+  // VIEWER открывает этот же экран, чтобы посмотреть топологию/детали сценария (спрятать этот
+  // роут целиком нельзя — это единственный способ увидеть DAG), но ничего сохранить/запустить не
+  // может: холст переключается в тот же mode="view", что уже используется в RunMonitorPage
+  // (драг/связи/удаление клавишей блокируются штатно, ничего дополнительно чинить не пришлось),
+  // палитра и Сохранить/Запустить скрыты целиком, а не просто задизейблены.
+  const canEdit = session !== null && canEditScenarios(session.role);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<StepNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -99,7 +84,7 @@ export function ScenarioEditorPage() {
         const newNode: Node<StepNodeData> = {
           id: localId,
           type: "step",
-          position: findFreeDropPosition(position, nds),
+          position: findFreeDropPosition(position, nds, DROP_OVERLAP_MARGIN),
           data: {
             localId,
             type,
@@ -145,7 +130,7 @@ export function ScenarioEditorPage() {
         pasteCountRef.current = 0;
         toastStore.pushInfo(`Шаг «${node.data.name}» скопирован`);
       } else if (key === "v") {
-        if (!clipboardRef.current) return;
+        if (!canEdit || !clipboardRef.current) return;
         event.preventDefault();
         pasteCountRef.current += 1;
         const offset = pasteCountRef.current * 32;
@@ -169,7 +154,7 @@ export function ScenarioEditorPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedNodeId, setNodes]);
+  }, [selectedNodeId, setNodes, canEdit]);
 
   function updateSelectedNodeData(patch: Partial<StepNodeData>) {
     if (!selectedNodeId) return;
@@ -254,10 +239,10 @@ export function ScenarioEditorPage() {
         description={description}
         onChangeName={setName}
         onChangeDescription={setDescription}
-        onSave={handleSave}
+        onSave={canEdit ? handleSave : undefined}
         isSaving={isSaving}
         nameError={nameError}
-        onRun={scenarioId ? () => handleRun() : undefined}
+        onRun={canEdit && scenarioId ? () => handleRun() : undefined}
         isStarting={startRun.isPending}
         onOpenLastRun={lastRun ? () => navigate(`/runs/${lastRun.runId}`) : undefined}
       />
@@ -265,19 +250,19 @@ export function ScenarioEditorPage() {
       {scenarioId && scenarioQuery.error ? <ErrorBanner error={scenarioQuery.error} title="Не удалось загрузить сценарий" /> : null}
 
       <div className="editor-body">
-        <StepPalette />
+        {canEdit ? <StepPalette /> : null}
 
         <div className="editor-canvas">
           <ScenarioGraph
-            mode="edit"
+            mode={canEdit ? "edit" : "view"}
             nodes={nodes}
             edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
+            onNodesChange={canEdit ? onNodesChange : undefined}
+            onEdgesChange={canEdit ? onEdgesChange : undefined}
+            onConnect={canEdit ? onConnect : undefined}
             onSelectNode={(id) => setSelectedNodeId(id)}
-            onDropStepType={handleDropStepType}
-            onRunFromNode={(stepId, stepName) => setPendingRunFrom({ stepId, stepName })}
+            onDropStepType={canEdit ? handleDropStepType : undefined}
+            onRunFromNode={canEdit ? (stepId, stepName) => setPendingRunFrom({ stepId, stepName }) : undefined}
           />
         </div>
 

@@ -2,9 +2,9 @@ import { useState } from "react";
 import { JellyPanel } from "../../components/jelly/JellyPanel";
 import { JellyInput, JellyTextarea } from "../../components/jelly/JellyInput";
 import { JellyButton } from "../../components/jelly/JellyButton";
-import { IconActivity, IconPlay, IconSave } from "../../components/jelly/icons";
+import { IconActivity, IconSave } from "../../components/jelly/icons";
 import { RobotsAvailabilityIndicator } from "../../components/feedback/RobotsAvailabilityIndicator";
-import { formatRobotsAvailability, useRobotsAvailability } from "../../queries/orchestratorQueries";
+import { RunLaunchButton } from "../../components/feedback/RunLaunchButton";
 import "./editorHeader.css";
 
 interface EditorHeaderProps {
@@ -12,7 +12,8 @@ interface EditorHeaderProps {
   description: string;
   onChangeName: (name: string) => void;
   onChangeDescription: (description: string) => void;
-  onSave: () => void;
+  // undefined — VIEWER (см. ScenarioEditorPage.canEdit): сохранение скрыто целиком, не задизейблено.
+  onSave?: () => void;
   isSaving: boolean;
   nameError?: string;
   // Запуск возможен только у уже сохранённого сценария (нужен scenarioId) — см. ScenarioEditorPage.
@@ -42,12 +43,6 @@ export function EditorHeader({
   // если пользователь до этого её свернул.
   const [isEditing, setIsEditing] = useState(false);
   const editing = isEditing || !!nameError;
-
-  // Пока данные не загрузились/эндпоинт недоступен — не блокируем кнопку сами, это только
-  // проактивная подсказка поверх реальной защиты на бэкенде (409 на POST /run остаётся как fallback
-  // именно на этот случай и на гонку между опросом и кликом).
-  const { data: robots } = useRobotsAvailability();
-  const launchBlocked = robots ? !robots.launchAllowed : false;
 
   return (
     // Сохранить/Запустить и подсказка по холсту раньше жили в отдельном .editor-toolbar-row под
@@ -106,27 +101,22 @@ export function EditorHeader({
               <IconActivity />
             </JellyButton>
           ) : null}
-          <JellyButton
-            iconOnly
-            title={isSaving ? "Сохранение…" : "Сохранить"}
-            aria-label={isSaving ? "Сохранение…" : "Сохранить"}
-            onClick={onSave}
-            disabled={isSaving}
-          >
-            <IconSave />
-          </JellyButton>
-          {onRun ? <RobotsAvailabilityIndicator /> : null}
-          {onRun ? (
+          {onSave ? (
             <JellyButton
               iconOnly
-              variant="success"
-              title={isStarting ? "Запуск…" : launchBlocked && robots ? formatRobotsAvailability(robots) : "Запустить"}
-              aria-label={isStarting ? "Запуск…" : launchBlocked && robots ? formatRobotsAvailability(robots) : "Запустить"}
-              onClick={onRun}
-              disabled={isStarting || launchBlocked}
+              title={isSaving ? "Сохранение…" : "Сохранить"}
+              aria-label={isSaving ? "Сохранение…" : "Сохранить"}
+              onClick={onSave}
+              disabled={isSaving}
             >
-              <IconPlay />
+              <IconSave />
             </JellyButton>
+          ) : null}
+          {onRun ? (
+            <>
+              <RobotsAvailabilityIndicator />
+              <RunLaunchButton isStarting={isStarting} onClick={onRun} />
+            </>
           ) : null}
         </div>
       </div>
