@@ -1,14 +1,23 @@
 import { apiClient } from "./client";
-import type { LoginRequest, LogoutRequest, RefreshRequest, TokenResponse } from "./types";
+import type { LoginRequest, MeResponse, TokenResponse } from "./types";
 
 export function login(request: LoginRequest): Promise<TokenResponse> {
   return apiClient.post<TokenResponse>("/auth/login", request);
 }
 
-export function refresh(request: RefreshRequest): Promise<TokenResponse> {
-  return apiClient.post<TokenResponse>("/auth/refresh", request);
+// Без тела (Sprint 27) — refresh-токен сервер берёт из куки сам.
+export function refresh(): Promise<TokenResponse> {
+  return apiClient.post<TokenResponse>("/auth/refresh");
 }
 
-export function logout(request: LogoutRequest): Promise<void> {
-  return apiClient.post<void>("/auth/logout", request);
+// Без тела (Sprint 27) — то же для logout.
+export function logout(): Promise<void> {
+  return apiClient.post<void>("/auth/logout");
+}
+
+// Роль не приходит в ответе /auth/login — отдельный запрос сразу после успешного логина (и при
+// восстановлении сессии на старте приложения, см. App.tsx). 401 отсюда — не ошибка, а штатный
+// сигнал "не залогинен".
+export function me(): Promise<MeResponse> {
+  return apiClient.get<MeResponse>("/auth/me");
 }

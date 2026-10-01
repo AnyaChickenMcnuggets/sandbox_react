@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { queryClient } from "./app/queryClient";
@@ -9,16 +10,27 @@ import { ScenarioEditorPage } from "./routes/ScenarioEditorPage";
 import { RunMonitorPage } from "./routes/RunMonitorPage";
 import { RunsListPage } from "./routes/RunsListPage";
 import { AdminUsersPage } from "./routes/AdminUsersPage";
-import { useAuthSession } from "./lib/authStore";
+import { me } from "./api/auth";
+import { authStore, useAuthSession, useAuthStatus } from "./lib/authStore";
 import { canManageUsers } from "./lib/roles";
 
-// Сессии нет — единственный доступный маршрут /login, любой другой путь туда же редиректит
-// (а сама LoginPage вне AppShell — у экрана входа нет шапки/навигации). Сессия появилась (реактивно,
-// через authStore/useSyncExternalStore) — обратное: /login больше не нужен, остальные маршруты
-// открываются внутри AppShell. Тот же стор, что чистит client.ts при неудачном refresh на 401 —
-// разлогин на истёкшем токене сам переключает эту ветку, отдельный редирект не нужен.
+// Токены — в HttpOnly-куках (Sprint 27), фронт не может прочитать "есть ли сессия" синхронно, как
+// раньше при localStorage. Единственный способ узнать — спросить сервер: один GET /auth/me на
+// старте приложения. Пока ответ не пришёл — status "checking", рендерить ни защищённые роуты, ни
+// /login нельзя (оба варианта могут мигнуть не тем экраном).
 function AppRoutes() {
   const session = useAuthSession();
+  const status = useAuthStatus();
+
+  useEffect(() => {
+    me()
+      .then((result) => authStore.setSession(result))
+      .catch(() => authStore.clear());
+  }, []);
+
+  if (status === "checking") {
+    return <div className="app-loading">Загрузка…</div>;
+  }
 
   if (!session) {
     return (

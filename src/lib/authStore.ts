@@ -1,68 +1,45 @@
 import { useSyncExternalStore } from "react";
 import type { UserRole } from "../api/types";
-import { decodeJwtRole } from "./jwt";
 
 export interface AuthSession {
-  accessToken: string;
-  refreshToken: string;
   username: string;
   role: UserRole;
 }
 
-const STORAGE_KEY = "rpa-auth-session";
+// "checking" — идёт первый GET /auth/me (см. App.tsx), статус ещё не известен; рендерить защищённые
+// роуты в этот момент нельзя (мигнёт логин-экран или наоборот). "authenticated"/"anonymous" —
+// известный результат этого запроса.
+export type AuthStatus = "checking" | "authenticated" | "anonymous";
 
-function readStored(): AuthSession | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as AuthSession;
-  } catch {
-    return null;
-  }
-}
-
-let current: AuthSession | null = readStored();
+let current: AuthSession | null = null;
+let status: AuthStatus = "checking";
 const listeners = new Set<() => void>();
 
-function persist() {
-  try {
-    if (current) localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
-    else localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // localStorage недоступен — сессия просто не переживёт reload, тот же компромисс, что у
-    // theme.ts/runHistory.ts/layoutStorage.ts.
-  }
+function notify() {
   listeners.forEach((listener) => listener());
 }
 
-// Модульный стор (не React Context) по тому же паттерну, что theme.ts/toastStore.ts/runHistory.ts:
-// читается из api/client.ts вне React-дерева (заголовок Authorization, retry на 401) — обычный
-// useState там не сработал бы.
+// Sprint 27: токены — в HttpOnly-куках, фронту их значение не видно и хранить нечего (см.
+// api/client.ts — Authorization-заголовок больше не выставляется, браузер прикладывает куку сам).
+// Единственное, что храним здесь — username/role, полученные через GET /auth/me; источник истины —
+// сама кука на сервере, не localStorage (в отличие от Sprint 26-версии этого стора).
 export const authStore = {
   get(): AuthSession | null {
     return current;
   },
-  // username — только что введённый логин (TokenResponse его не возвращает), role — декодируется
-  // из claim'а access-токена (см. jwt.ts), сервер не отдаёт её отдельным полем.
-  setSession(tokens: { accessToken: string; refreshToken: string }, username: string) {
-    const role = decodeJwtRole(tokens.accessToken);
-    if (!role) {
-      throw new Error("В access-токене нет распознаваемого поля role");
-    }
-    current = { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, username, role };
-    persist();
+  getStatus(): AuthStatus {
+    return status;
   },
-  // Refresh меняет оба токена (refresh — одноразовый) — username/role не трогаем, смена роли
-  // пользователю требует перелогина, а не тихого обновления на лету.
-  updateTokens(tokens: { accessToken: string; refreshToken: string }) {
-    if (!current) return;
-    current = { ...current, accessToken: tokens.accessToken, refreshToken: tokens.refreshToken };
-    persist();
+  setSession(session: AuthSession) {
+    current = session;
+    status = "authenticated";
+    notify();
   },
   clear() {
-    if (!current) return;
+    if (current === null && status === "anonymous") return;
     current = null;
-    persist();
+    status = "anonymous";
+    notify();
   },
   subscribe(listener: () => void): () => void {
     listeners.add(listener);
@@ -72,4 +49,8 @@ export const authStore = {
 
 export function useAuthSession(): AuthSession | null {
   return useSyncExternalStore(authStore.subscribe, authStore.get);
+}
+
+export function useAuthStatus(): AuthStatus {
+  return useSyncExternalStore(authStore.subscribe, authStore.getStatus);
 }

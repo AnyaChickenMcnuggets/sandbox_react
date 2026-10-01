@@ -154,22 +154,18 @@ export interface LoginRequest {
   password: string;
 }
 
+// Sprint 27: токены — в HttpOnly-куках (Set-Cookie), тело ответа их больше не содержит. Фронт
+// токены не хранит и не видит вообще, см. lib/authStore.ts.
 export interface TokenResponse {
-  accessToken: string;
-  refreshToken: string;
   expiresInSeconds: number;
 }
 
-export interface RefreshRequest {
-  refreshToken: string;
+// Sprint 27: без тела — refresh/access-токены сервер берёт из куки сам.
+export interface MeResponse {
+  username: string;
+  role: UserRole;
 }
 
-export interface LogoutRequest {
-  refreshToken: string;
-}
-
-// Роль пользователя сюда не входит — сервер отдаёт её только внутри claim'а access-токена, не
-// отдельным полем (см. lib/jwt.ts, decodeJwtRole).
 export interface UserResponse {
   id: number;
   username: string;
