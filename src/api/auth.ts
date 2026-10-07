@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { LoginRequest, MeResponse, TokenResponse } from "./types";
+import type { ChangePasswordRequest, LoginRequest, MeResponse, TokenResponse } from "./types";
 
 export function login(request: LoginRequest): Promise<TokenResponse> {
   return apiClient.post<TokenResponse>("/auth/login", request);
@@ -15,7 +15,12 @@ export function logout(): Promise<void> {
   return apiClient.post<void>("/auth/logout");
 }
 
-// Роль не приходит в ответе /auth/login — отдельный запрос сразу после успешного логина (и при
+// Новые куки браузер ставит сам, остальные сессии пользователя бэкенд разлогинивает.
+export function changePassword(request: ChangePasswordRequest): Promise<TokenResponse> {
+  return apiClient.post<TokenResponse>("/auth/change-password", request);
+}
+
+// Роль и права не приходят в ответе /auth/login — отдельный запрос сразу после успешного логина (и при
 // восстановлении сессии на старте приложения, см. App.tsx). 401 отсюда — не ошибка, а штатный
 // сигнал "не залогинен".
 export function me(): Promise<MeResponse> {

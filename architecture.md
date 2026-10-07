@@ -436,11 +436,30 @@ capped `max-width` (`min(2200px, 94vw)` / `min(1400px, 92vw)`) — растян�
 | GET | `/api/v1/scenarios/{id}` | 200 `ScenarioResponse` | |
 | PUT | `/api/v1/scenarios/{id}` | 200 `ScenarioResponse` | не 201/202; пересоздаёт все шаги (новые id) |
 | DELETE | `/api/v1/scenarios/{id}` | 204 | |
-| POST | `/api/v1/scenarios/{id}/run` | 202 `RunResponse` | тело `{triggeredBy}` опционально |
+| POST | `/api/v1/scenarios/{id}/run` | 202 `RunResponse` | тело `{startStepId}` опционально; `triggeredBy` убран (Sprint 26) |
 | GET | `/api/v1/runs/{runId}` | 200 `RunResponse` | поллинг 2.5с, авто-стоп на терминальном статусе |
 | POST | `/api/v1/runs/{runId}/stop` | 200 `RunResponse` | идемпотентен для терминальных прогонов |
 | POST | `/api/v1/scenarios/{id}/cleanup` | 200 `{success, failures[]}` | 404, если прогонов не было |
 | GET | `/api/v1/runs/{runId}/steps/{stepId}/queue-items` | 200 `QueueItemResponse[]` | `?pageNumber&pageSize` |
+| GET | `/api/v1/orchestrator/robots-availability` | 200 `RobotsAvailabilityResponse` | право `ORCHESTRATOR_READ`; без него не поллим |
+| POST | `/api/v1/auth/login` | 200 `{expiresInSeconds}` | токены — только `HttpOnly`-куки (Sprint 27); 401 `INVALID_CREDENTIALS` |
+| POST | `/api/v1/auth/refresh` | 200 `{expiresInSeconds}` | без тела, refresh-токен из куки; 401 → разлогин |
+| POST | `/api/v1/auth/logout` | 204 | без тела |
+| GET | `/api/v1/auth/me` | 200 `{username, role, permissions[]}` | любая роль; на старте и после 403 (права меняются на лету) |
+| POST | `/api/v1/auth/change-password` | 200 `{expiresInSeconds}` | `{currentPassword,newPassword}`; 400 `INVALID_REQUEST`/`VALIDATION_FAILED`; прочие сессии отзываются |
+| GET/POST | `/api/v1/admin/users` | `UserResponse[]` / 201 | право `USER_MANAGE` |
+| PUT | `/api/v1/admin/users/{id}/role`, `/enabled`, `/password` | `UserResponse` / 204 | право `USER_MANAGE` |
+| GET | `/api/v1/admin/permissions` | 200 `{code,description}[]` | право `ROLE_MANAGE` |
+| GET | `/api/v1/admin/roles` | 200 `{role,permissions[],editable}[]` | право `ROLE_MANAGE`; ADMIN `editable:false` |
+| PUT | `/api/v1/admin/roles/{role}/permissions` | 200 `{role,permissions[],editable}` | заменяет набор целиком; для ADMIN → 400 |
+
+**Аутентификация и гейтинг (Sprint 27–29).** `lib/authStore.ts` хранит только `{username, role,
+permissions}` из `/auth/me` (токены фронту не видны; `api/client.ts` шлёт `credentials: "include"`,
+на 401 — один single-flight `/auth/refresh` + повтор, на 403 — фоновое перечитывание `/auth/me`).
+UI гейтится **только** через `usePermission(...)`/`hasPermission(...)` по `permissions`, не по
+`role` — права ролей редактирует админ (`/admin/roles`). Действия без права скрываются, не
+дизейблятся. JOB/QUEUE_CHECK без `timeoutSeconds` — предупреждение перед запуском
+(`lib/scenarioTimeouts.ts`); пустые таймауты в `config` не отправляются.
 
 Коды ошибок (`ErrorResponse{code,message,details[]}`): `400 VALIDATION_FAILED` (bean validation),
 `400 INVALID_REQUEST` (DAG — дублирующийся/несуществующий `localId`, цикл), `404 NOT_FOUND`,

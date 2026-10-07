@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const nullableNumber = z.union([z.number(), z.null()]);
 const nullableString = z.union([z.string(), z.null()]);
+const optionalPositiveNumber = z.union([z.number().positive("Должно быть больше 0"), z.null()]);
 
 export const jobFormSchema = z
   .object({
@@ -10,6 +11,8 @@ export const jobFormSchema = z
     rpaProjectName: nullableString,
     countRobots: nullableNumber,
     arguments: z.array(z.object({ key: z.string(), value: z.string() })),
+    timeoutSeconds: optionalPositiveNumber,
+    pollIntervalSeconds: optionalPositiveNumber,
   })
   .superRefine((val, ctx) => {
     const hasId = val.rpaProjectId != null;
@@ -54,8 +57,8 @@ export const queueCheckFormSchema = z.object({
   expectedNew: nullableNumber,
   expectedInProgress: nullableNumber,
   minTotalCount: nullableNumber,
-  timeoutSeconds: nullableNumber,
-  pollIntervalSeconds: nullableNumber,
+  timeoutSeconds: optionalPositiveNumber,
+  pollIntervalSeconds: optionalPositiveNumber,
 });
 
 export type QueueCheckFormValues = z.infer<typeof queueCheckFormSchema>;

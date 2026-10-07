@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from "react";
-import type { UserRole } from "../api/types";
+import type { Permission, UserRole } from "../api/types";
 
 export interface AuthSession {
   username: string;
   role: UserRole;
+  permissions: Permission[];
 }
 
 // "checking" — идёт первый GET /auth/me (см. App.tsx), статус ещё не известен; рендерить защищённые
@@ -19,10 +20,17 @@ function notify() {
   listeners.forEach((listener) => listener());
 }
 
-// Sprint 27: токены — в HttpOnly-куках, фронту их значение не видно и хранить нечего (см.
-// api/client.ts — Authorization-заголовок больше не выставляется, браузер прикладывает куку сам).
-// Единственное, что храним здесь — username/role, полученные через GET /auth/me; источник истины —
-// сама кука на сервере, не localStorage (в отличие от Sprint 26-версии этого стора).
+function sameSession(a: AuthSession, b: AuthSession): boolean {
+  return (
+    a.username === b.username &&
+    a.role === b.role &&
+    a.permissions.length === b.permissions.length &&
+    a.permissions.every((p, i) => p === b.permissions[i])
+  );
+}
+
+// Sprint 27: токены — в HttpOnly-куках, фронту их значение не видно и хранить нечего. Здесь только
+// username/role/permissions из GET /auth/me; источник истины — сервер, не localStorage.
 export const authStore = {
   get(): AuthSession | null {
     return current;
@@ -31,6 +39,8 @@ export const authStore = {
     return status;
   },
   setSession(session: AuthSession) {
+    // Повторный /me (после 403) почти всегда возвращает то же самое — не дёргаем подписчиков зря.
+    if (current && status === "authenticated" && sameSession(current, session)) return;
     current = session;
     status = "authenticated";
     notify();
@@ -47,10 +57,19 @@ export const authStore = {
   },
 };
 
+export function hasPermission(session: AuthSession | null, permission: Permission): boolean {
+  return session !== null && session.permissions.includes(permission);
+}
+
 export function useAuthSession(): AuthSession | null {
   return useSyncExternalStore(authStore.subscribe, authStore.get);
 }
 
 export function useAuthStatus(): AuthStatus {
   return useSyncExternalStore(authStore.subscribe, authStore.getStatus);
+}
+
+// Единая точка UI-гейтинга: права редактируются админом (Sprint 29), сравнивать role больше нельзя.
+export function usePermission(permission: Permission): boolean {
+  return hasPermission(useAuthSession(), permission);
 }

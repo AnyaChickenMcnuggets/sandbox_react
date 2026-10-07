@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { IconActivity, IconLogout, IconUsers } from "../jelly/icons";
+import { IconActivity, IconLogout, IconShield, IconUsers } from "../jelly/icons";
 import { JellyButton } from "../jelly/JellyButton";
 import { ThemeToggle } from "./ThemeToggle";
-import { useAuthSession } from "../../lib/authStore";
+import { hasPermission, useAuthSession } from "../../lib/authStore";
 import { useLogout } from "../../queries/authMutations";
-import { canManageUsers } from "../../lib/roles";
 import "./appShell.css";
+
+const navLinkClass = ({ isActive }: { isActive: boolean }) => `app-nav-link${isActive ? " app-nav-link-active" : ""}`;
 
 interface AppShellProps {
   children: ReactNode;
@@ -32,23 +33,35 @@ export function AppShell({ children }: AppShellProps) {
         </Link>
         <div className="app-header-right">
           <nav className="app-nav">
-            <NavLink to="/" end className={({ isActive }) => `app-nav-link${isActive ? " app-nav-link-active" : ""}`}>
-              Сценарии
-            </NavLink>
-            <NavLink to="/runs" className={({ isActive }) => `app-nav-link${isActive ? " app-nav-link-active" : ""}`}>
-              <IconActivity width={16} height={16} />
-              Запуски
-            </NavLink>
-            {session && canManageUsers(session.role) ? (
-              <NavLink to="/admin/users" className={({ isActive }) => `app-nav-link${isActive ? " app-nav-link-active" : ""}`}>
+            {hasPermission(session, "SCENARIO_READ") ? (
+              <NavLink to="/" end className={navLinkClass}>
+                Сценарии
+              </NavLink>
+            ) : null}
+            {hasPermission(session, "RUN_READ") ? (
+              <NavLink to="/runs" className={navLinkClass}>
+                <IconActivity width={16} height={16} />
+                Запуски
+              </NavLink>
+            ) : null}
+            {hasPermission(session, "USER_MANAGE") ? (
+              <NavLink to="/admin/users" className={navLinkClass}>
                 <IconUsers width={16} height={16} />
                 Пользователи
+              </NavLink>
+            ) : null}
+            {hasPermission(session, "ROLE_MANAGE") ? (
+              <NavLink to="/admin/roles" className={navLinkClass}>
+                <IconShield width={16} height={16} />
+                Роли и права
               </NavLink>
             ) : null}
           </nav>
           {session ? (
             <div className="app-user">
-              <span className="app-user-name">{session.username}</span>
+              <NavLink to="/account" className="app-user-name" title="Аккаунт и смена пароля">
+                {session.username}
+              </NavLink>
               <JellyButton
                 iconOnly
                 size="sm"

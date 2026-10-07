@@ -1,0 +1,36 @@
+.account-page {
+  max-width: min(520px, 92vw);
+  width: 100%;
+  margin: 0 auto;
+}
+
+.account-toolbar {
+  margin-bottom: 24px;
+}
+
+.account-toolbar h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.account-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+}
+
+.account-panel-title {
+  font-weight: 900;
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.account-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.account-submit {
+  width: 100%;
+  margin-top: 4px;
+}

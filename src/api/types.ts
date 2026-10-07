@@ -17,6 +17,9 @@ export interface JobStepConfig {
   rpaProjectName: string | null;
   countRobots: number | null;
   arguments: Record<string, string> | null;
+  // Нет глобального таймаута (Sprint 29): отсутствует/null — шаг ждёт без ограничения.
+  timeoutSeconds?: number | null;
+  pollIntervalSeconds?: number | null;
 }
 
 export interface TransactionTemplate {
@@ -40,8 +43,9 @@ export interface QueueCheckStepConfig {
   naturalKeyPrefixMatch: boolean | null;
   expectedStatusCounts: Partial<Record<QueueItemDerivedStatus, number>> | null;
   minTotalCount: number | null;
-  timeoutSeconds: number | null;
-  pollIntervalSeconds: number | null;
+  // Дефолта на бэкенде больше нет (Sprint 29): отсутствует/null — шаг ждёт без ограничения.
+  timeoutSeconds?: number | null;
+  pollIntervalSeconds?: number | null;
 }
 
 export type StepConfig = JobStepConfig | QueueStepConfig | QueueCheckStepConfig;
@@ -160,10 +164,46 @@ export interface TokenResponse {
   expiresInSeconds: number;
 }
 
-// Sprint 27: без тела — refresh/access-токены сервер берёт из куки сам.
+// Закрытый список прав (бэкенд: auth/domain/Permission.java) — новое право через API завести нельзя,
+// поэтому union, а не string.
+export type Permission =
+  | "SCENARIO_READ"
+  | "SCENARIO_WRITE"
+  | "SCENARIO_DELETE"
+  | "RUN_READ"
+  | "RUN_START"
+  | "RUN_STOP"
+  | "CLEANUP"
+  | "ORCHESTRATOR_READ"
+  | "USER_MANAGE"
+  | "ROLE_MANAGE";
+
+// UI-гейтинг — только по permissions (Sprint 29: админ сам настраивает права ролей), не по role.
 export interface MeResponse {
   username: string;
   role: UserRole;
+  permissions: Permission[];
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface PermissionResponse {
+  code: Permission;
+  description: string;
+}
+
+export interface RolePermissionsResponse {
+  role: UserRole;
+  permissions: Permission[];
+  // false для ADMIN — у него всегда все права
+  editable: boolean;
+}
+
+export interface SetRolePermissionsRequest {
+  permissions: Permission[];
 }
 
 export interface UserResponse {

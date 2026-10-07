@@ -93,6 +93,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-decoration: none;
+}
+
+.app-user-name:hover,
+.app-user-name.active {
+  color: var(--text-primary);
 }
 
 .app-logo-blob {

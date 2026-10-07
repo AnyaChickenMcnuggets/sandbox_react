@@ -1,0 +1,26 @@
+.admin-roles-page {
+  max-width: min(1100px, 92vw);
+  width: 100%;
+  margin: 0 auto;
+}
+
+.admin-roles-toolbar {
+  margin-bottom: 24px;
+}
+
+.admin-roles-toolbar h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.admin-roles-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+}
+
+.admin-roles-loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-secondary);
+}

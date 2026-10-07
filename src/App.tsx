@@ -10,9 +10,12 @@ import { ScenarioEditorPage } from "./routes/ScenarioEditorPage";
 import { RunMonitorPage } from "./routes/RunMonitorPage";
 import { RunsListPage } from "./routes/RunsListPage";
 import { AdminUsersPage } from "./routes/AdminUsersPage";
+import { AdminRolesPage } from "./routes/AdminRolesPage";
+import { AccountPage } from "./routes/AccountPage";
+import { NoAccessPage } from "./routes/NoAccessPage";
 import { me } from "./api/auth";
-import { authStore, useAuthSession, useAuthStatus } from "./lib/authStore";
-import { canManageUsers } from "./lib/roles";
+import type { Permission } from "./api/types";
+import { authStore, hasPermission, useAuthSession, useAuthStatus } from "./lib/authStore";
 
 // Токены — в HttpOnly-куках (Sprint 27), фронт не может прочитать "есть ли сессия" синхронно, как
 // раньше при localStorage. Единственный способ узнать — спросить сервер: один GET /auth/me на
@@ -41,15 +44,21 @@ function AppRoutes() {
     );
   }
 
+  const has = (permission: Permission) => hasPermission(session, permission);
+
   return (
     <AppShell>
       <Routes>
-        <Route path="/" element={<ScenarioListPage />} />
-        <Route path="/scenarios/new" element={<ScenarioEditorPage />} />
-        <Route path="/scenarios/:scenarioId/edit" element={<ScenarioEditorPage />} />
-        <Route path="/runs" element={<RunsListPage />} />
-        <Route path="/runs/:runId" element={<RunMonitorPage />} />
-        {canManageUsers(session.role) ? <Route path="/admin/users" element={<AdminUsersPage />} /> : null}
+        <Route path="/" element={has("SCENARIO_READ") ? <ScenarioListPage /> : <NoAccessPage />} />
+        {has("SCENARIO_WRITE") ? <Route path="/scenarios/new" element={<ScenarioEditorPage />} /> : null}
+        {has("SCENARIO_READ") ? (
+          <Route path="/scenarios/:scenarioId/edit" element={<ScenarioEditorPage />} />
+        ) : null}
+        {has("RUN_READ") ? <Route path="/runs" element={<RunsListPage />} /> : null}
+        {has("RUN_READ") ? <Route path="/runs/:runId" element={<RunMonitorPage />} /> : null}
+        {has("USER_MANAGE") ? <Route path="/admin/users" element={<AdminUsersPage />} /> : null}
+        {has("ROLE_MANAGE") ? <Route path="/admin/roles" element={<AdminRolesPage />} /> : null}
+        <Route path="/account" element={<AccountPage />} />
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

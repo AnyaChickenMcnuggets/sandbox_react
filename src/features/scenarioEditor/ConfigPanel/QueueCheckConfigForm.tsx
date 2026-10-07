@@ -7,6 +7,7 @@ import { JellyInput } from "../../../components/jelly/JellyInput";
 import { JellyButton } from "../../../components/jelly/JellyButton";
 import { JellyToggle } from "../../../components/jelly/JellyToggle";
 import { queueCheckFormSchema, type QueueCheckFormValues } from "./validation/stepConfigSchemas";
+import { positiveOrUndefined } from "./common/optionalNumber";
 import "./queueCheckConfigForm.css";
 
 interface QueueCheckConfigFormProps {
@@ -26,8 +27,8 @@ function toFormValues(config: QueueCheckStepConfig): QueueCheckFormValues {
     expectedNew: counts.NEW ?? null,
     expectedInProgress: counts.IN_PROGRESS ?? null,
     minTotalCount: config.minTotalCount,
-    timeoutSeconds: config.timeoutSeconds,
-    pollIntervalSeconds: config.pollIntervalSeconds,
+    timeoutSeconds: config.timeoutSeconds ?? null,
+    pollIntervalSeconds: config.pollIntervalSeconds ?? null,
   };
 }
 
@@ -40,6 +41,8 @@ function toConfig(values: QueueCheckFormValues): QueueCheckStepConfig {
   if (values.expectedInProgress != null) counts.IN_PROGRESS = values.expectedInProgress;
 
   const naturalKeys = values.naturalKeys.map((k) => k.value).filter((v) => v.trim() !== "");
+  const timeoutSeconds = positiveOrUndefined(values.timeoutSeconds);
+  const pollIntervalSeconds = positiveOrUndefined(values.pollIntervalSeconds);
 
   return {
     queueName: values.queueName,
@@ -47,8 +50,8 @@ function toConfig(values: QueueCheckFormValues): QueueCheckStepConfig {
     naturalKeyPrefixMatch: values.naturalKeyPrefixMatch,
     expectedStatusCounts: Object.keys(counts).length > 0 ? (counts as QueueCheckStepConfig["expectedStatusCounts"]) : null,
     minTotalCount: values.minTotalCount,
-    timeoutSeconds: values.timeoutSeconds,
-    pollIntervalSeconds: values.pollIntervalSeconds,
+    ...(timeoutSeconds !== undefined ? { timeoutSeconds } : {}),
+    ...(pollIntervalSeconds !== undefined ? { pollIntervalSeconds } : {}),
   };
 }
 
@@ -119,11 +122,29 @@ export function QueueCheckConfigForm({ config, onChange }: QueueCheckConfigFormP
       <JellyField label="Минимум транзакций всего" hint="Опционально">
         <JellyInput type="number" {...numField("minTotalCount")} />
       </JellyField>
-      <JellyField label="Таймаут (сек)" hint="Опционально, по умолчанию на бэкенде">
-        <JellyInput type="number" {...numField("timeoutSeconds")} />
+      <JellyField
+        label="Таймаут (сек)"
+        hint="Опционально — пусто: шаг ждёт без ограничения"
+        error={formState.errors.timeoutSeconds?.message}
+      >
+        <JellyInput
+          type="number"
+          min={1}
+          hasError={!!formState.errors.timeoutSeconds}
+          {...numField("timeoutSeconds")}
+        />
       </JellyField>
-      <JellyField label="Интервал поллинга (сек)" hint="Опционально, по умолчанию на бэкенде">
-        <JellyInput type="number" {...numField("pollIntervalSeconds")} />
+      <JellyField
+        label="Интервал поллинга (сек)"
+        hint="Опционально — пусто: интервал по умолчанию на бэкенде"
+        error={formState.errors.pollIntervalSeconds?.message}
+      >
+        <JellyInput
+          type="number"
+          min={1}
+          hasError={!!formState.errors.pollIntervalSeconds}
+          {...numField("pollIntervalSeconds")}
+        />
       </JellyField>
     </div>
   );

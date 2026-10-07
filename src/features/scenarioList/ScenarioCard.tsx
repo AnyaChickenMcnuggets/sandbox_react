@@ -9,6 +9,7 @@ import { RunLaunchButton } from "../../components/feedback/RunLaunchButton";
 import { formatDateTime } from "../../lib/dates";
 import { STEP_TYPE_LABELS } from "../../lib/runStatus";
 import { runHistory } from "../../lib/runHistory";
+import { usePermission } from "../../lib/authStore";
 import "./scenarioCard.css";
 
 interface ScenarioCardProps {
@@ -17,6 +18,7 @@ interface ScenarioCardProps {
   onDelete: (scenario: ScenarioResponse) => void;
   isStarting: boolean;
   canEdit: boolean;
+  canRun: boolean;
   canDelete: boolean;
 }
 
@@ -26,9 +28,10 @@ const TYPE_TONE: Record<string, "job" | "queue" | "queueCheck"> = {
   QUEUE_CHECK: "queueCheck",
 };
 
-export function ScenarioCard({ scenario, onRun, onDelete, isStarting, canEdit, canDelete }: ScenarioCardProps) {
+export function ScenarioCard({ scenario, onRun, onDelete, isStarting, canEdit, canRun, canDelete }: ScenarioCardProps) {
   const navigate = useNavigate();
-  const lastRun = runHistory.lastForScenario(scenario.id);
+  const canReadRuns = usePermission("RUN_READ");
+  const lastRun = canReadRuns ? runHistory.lastForScenario(scenario.id) : undefined;
   const stepTypeCounts = scenario.steps.reduce<Record<string, number>>((acc, step) => {
     acc[step.type] = (acc[step.type] ?? 0) + 1;
     return acc;
@@ -77,7 +80,7 @@ export function ScenarioCard({ scenario, onRun, onDelete, isStarting, canEdit, c
               <IconEdit />
             </JellyButton>
           ) : null}
-          {canEdit ? <RunLaunchButton size="sm" isStarting={isStarting} onClick={() => onRun(scenario)} /> : null}
+          {canRun ? <RunLaunchButton size="sm" isStarting={isStarting} onClick={() => onRun(scenario)} /> : null}
           {canDelete ? (
             <JellyButton
               size="sm"

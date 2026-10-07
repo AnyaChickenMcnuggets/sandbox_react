@@ -12,7 +12,7 @@ export function AdminUsersPage() {
     <div className="admin-users-page">
       <div className="admin-users-toolbar">
         <h1>Пользователи</h1>
-        <p className="admin-users-subtitle">Управление доступом — только для ADMIN</p>
+        <p className="admin-users-subtitle">Создание, роли, блокировка и сброс паролей</p>
       </div>
 
       <CreateUserForm />

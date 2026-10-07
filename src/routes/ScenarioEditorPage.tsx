@@ -27,8 +27,8 @@ import { ErrorBanner } from "../components/feedback/ErrorBanner";
 import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
 import { toastStore } from "../components/feedback/toastStore";
 import { runHistory } from "../lib/runHistory";
-import { useAuthSession } from "../lib/authStore";
-import { canEditScenarios } from "../lib/roles";
+import { usePermission } from "../lib/authStore";
+import { countStepsWithoutTimeout, formatNoTimeoutWarning } from "../lib/scenarioTimeouts";
 import "./scenarioEditorPage.css";
 
 const DROP_OVERLAP_MARGIN = 16;
@@ -42,13 +42,12 @@ export function ScenarioEditorPage() {
   const createScenario = useCreateScenario();
   const updateScenario = useUpdateScenario(scenarioId ?? -1);
   const startRun = useStartRun();
-  const session = useAuthSession();
-  // VIEWER открывает этот же экран, чтобы посмотреть топологию/детали сценария (спрятать этот
-  // роут целиком нельзя — это единственный способ увидеть DAG), но ничего сохранить/запустить не
-  // может: холст переключается в тот же mode="view", что уже используется в RunMonitorPage
-  // (драг/связи/удаление клавишей блокируются штатно, ничего дополнительно чинить не пришлось),
-  // палитра и Сохранить/Запустить скрыты целиком, а не просто задизейблены.
-  const canEdit = session !== null && canEditScenarios(session.role);
+  // Без SCENARIO_WRITE этот же экран остаётся режимом просмотра топологии (единственный способ
+  // увидеть DAG): холст в mode="view", как в RunMonitorPage, палитра и Сохранить скрыты целиком, а
+  // не задизейблены. Запуск гейтится отдельным правом RUN_START — права редактируются админом.
+  const canEdit = usePermission("SCENARIO_WRITE");
+  const canRun = usePermission("RUN_START");
+  const canReadRuns = usePermission("RUN_READ");
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<StepNodeData>>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -218,13 +217,38 @@ export function ScenarioEditorPage() {
   // старта останутся PENDING до конца прогона, их предпосылки (например, уже созданные очереди)
   // должны быть выполнены заранее. Бэкенд это не валидирует на фронте — только явно предупреждаем
   // перед запуском через тот же ConfirmDialog, что и удаление сценария.
-  const [pendingRunFrom, setPendingRunFrom] = useState<{ stepId: number; stepName: string } | null>(null);
+  // Тот же диалог предупреждает и о шагах JOB/QUEUE_CHECK без таймаута (Sprint 29): считаем по
+  // сохранённой версии сценария — именно её запустит бэкенд, а не локальные несохранённые правки.
+  const [pendingRun, setPendingRun] = useState<{
+    startStep?: { stepId: number; stepName: string };
+    missingTimeouts: number;
+  } | null>(null);
 
-  function handleConfirmRunFromNode() {
-    if (!pendingRunFrom) return;
-    handleRun(pendingRunFrom.stepId);
-    setPendingRunFrom(null);
+  function requestRun(startStep?: { stepId: number; stepName: string }) {
+    const missingTimeouts = scenarioQuery.data ? countStepsWithoutTimeout(scenarioQuery.data.steps) : 0;
+    if (!startStep && missingTimeouts === 0) {
+      handleRun();
+      return;
+    }
+    setPendingRun({ startStep, missingTimeouts });
   }
+
+  function handleConfirmRun() {
+    if (!pendingRun) return;
+    handleRun(pendingRun.startStep?.stepId);
+    setPendingRun(null);
+  }
+
+  const pendingRunMessage = pendingRun
+    ? [
+        pendingRun.startStep
+          ? `Запуск начнётся сразу с шага «${pendingRun.startStep.stepName}» — все шаги до него останутся в статусе PENDING (движок их не тронет). Убедитесь, что их предпосылки уже выполнены — например, нужные очереди созданы или заполнены — прежде чем продолжить.`
+          : null,
+        pendingRun.missingTimeouts > 0 ? formatNoTimeoutWarning(pendingRun.missingTimeouts) : null,
+      ]
+        .filter(Boolean)
+        .join("\n\n")
+    : "";
 
   const isSaving = createScenario.isPending || updateScenario.isPending;
   // Последний запуск ЭТОГО сценария (успешный, ещё выполняющийся — без разницы) — тот же локальный
@@ -242,9 +266,9 @@ export function ScenarioEditorPage() {
         onSave={canEdit ? handleSave : undefined}
         isSaving={isSaving}
         nameError={nameError}
-        onRun={canEdit && scenarioId ? () => handleRun() : undefined}
+        onRun={canRun && scenarioId ? () => requestRun() : undefined}
         isStarting={startRun.isPending}
-        onOpenLastRun={lastRun ? () => navigate(`/runs/${lastRun.runId}`) : undefined}
+        onOpenLastRun={lastRun && canReadRuns ? () => navigate(`/runs/${lastRun.runId}`) : undefined}
       />
 
       {scenarioId && scenarioQuery.error ? <ErrorBanner error={scenarioQuery.error} title="Не удалось загрузить сценарий" /> : null}
@@ -262,7 +286,7 @@ export function ScenarioEditorPage() {
             onConnect={canEdit ? onConnect : undefined}
             onSelectNode={(id) => setSelectedNodeId(id)}
             onDropStepType={canEdit ? handleDropStepType : undefined}
-            onRunFromNode={canEdit ? (stepId, stepName) => setPendingRunFrom({ stepId, stepName }) : undefined}
+            onRunFromNode={canRun ? (stepId, stepName) => requestRun({ stepId, stepName }) : undefined}
           />
         </div>
 
@@ -281,17 +305,13 @@ export function ScenarioEditorPage() {
       </div>
 
       <ConfirmDialog
-        open={pendingRunFrom !== null}
-        title="Запустить с этого шага?"
-        message={
-          pendingRunFrom
-            ? `Запуск начнётся сразу с шага «${pendingRunFrom.stepName}» — все шаги до него останутся в статусе PENDING (движок их не тронет). Убедитесь, что их предпосылки уже выполнены — например, нужные очереди созданы или заполнены — прежде чем продолжить.`
-            : ""
-        }
+        open={pendingRun !== null}
+        title={pendingRun?.startStep ? "Запустить с этого шага?" : "Запустить без таймаута?"}
+        message={pendingRunMessage}
         confirmLabel="Запустить"
         danger={false}
-        onConfirm={handleConfirmRunFromNode}
-        onCancel={() => setPendingRunFrom(null)}
+        onConfirm={handleConfirmRun}
+        onCancel={() => setPendingRun(null)}
       />
     </div>
   );

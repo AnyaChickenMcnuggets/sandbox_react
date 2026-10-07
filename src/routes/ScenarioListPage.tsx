@@ -12,8 +12,8 @@ import { RobotsAvailabilityIndicator } from "../components/feedback/RobotsAvaila
 import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
 import { toastStore } from "../components/feedback/toastStore";
 import { runHistory } from "../lib/runHistory";
-import { useAuthSession } from "../lib/authStore";
-import { canDeleteScenarios, canEditScenarios } from "../lib/roles";
+import { usePermission } from "../lib/authStore";
+import { countStepsWithoutTimeout, formatNoTimeoutWarning } from "../lib/scenarioTimeouts";
 import "./scenarioListPage.css";
 
 export function ScenarioListPage() {
@@ -22,8 +22,27 @@ export function ScenarioListPage() {
   const deleteScenario = useDeleteScenario();
   const startRun = useStartRun();
   const [pendingDelete, setPendingDelete] = useState<ScenarioResponse | null>(null);
-  const session = useAuthSession();
-  const canEdit = session !== null && canEditScenarios(session.role);
+  const [pendingRun, setPendingRun] = useState<{ scenario: ScenarioResponse; missingTimeouts: number } | null>(null);
+  const canEdit = usePermission("SCENARIO_WRITE");
+  const canRun = usePermission("RUN_START");
+  const canDelete = usePermission("SCENARIO_DELETE");
+
+  // Шаги JOB/QUEUE_CHECK без таймаута могут идти бесконечно (Sprint 29) — перед запуском один раз
+  // явно подтверждаем это, а не запускаем молча.
+  function requestRun(scenario: ScenarioResponse) {
+    const missingTimeouts = countStepsWithoutTimeout(scenario.steps);
+    if (missingTimeouts > 0) {
+      setPendingRun({ scenario, missingTimeouts });
+      return;
+    }
+    handleRun(scenario);
+  }
+
+  function handleConfirmRun() {
+    if (!pendingRun) return;
+    handleRun(pendingRun.scenario);
+    setPendingRun(null);
+  }
 
   function handleRun(scenario: ScenarioResponse) {
     startRun.mutate(
@@ -80,11 +99,12 @@ export function ScenarioListPage() {
             <ScenarioCard
               key={scenario.id}
               scenario={scenario}
-              onRun={handleRun}
+              onRun={requestRun}
               onDelete={setPendingDelete}
               isStarting={startRun.isPending && startRun.variables?.scenarioId === scenario.id}
               canEdit={canEdit}
-              canDelete={session !== null && canDeleteScenarios(session.role)}
+              canRun={canRun}
+              canDelete={canDelete}
             />
           ))}
         </motion.div>
@@ -96,6 +116,16 @@ export function ScenarioListPage() {
         message={pendingDelete ? `«${pendingDelete.name}» будет удалён без возможности восстановления.` : ""}
         onConfirm={handleConfirmDelete}
         onCancel={() => setPendingDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={pendingRun !== null}
+        title="Запустить без таймаута?"
+        message={pendingRun ? formatNoTimeoutWarning(pendingRun.missingTimeouts) : ""}
+        confirmLabel="Запустить"
+        danger={false}
+        onConfirm={handleConfirmRun}
+        onCancel={() => setPendingRun(null)}
       />
     </div>
   );

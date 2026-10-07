@@ -1,4 +1,4 @@
-import type { ErrorResponse } from "./types";
+import type { ErrorResponse, MeResponse } from "./types";
 import { authStore } from "../lib/authStore";
 
 const API_BASE = "/api/v1";
@@ -112,18 +112,39 @@ function refreshSession(): Promise<boolean> {
   return refreshInFlight;
 }
 
+let reloadMeInFlight: Promise<void> | null = null;
+
+// После 403 права могли измениться (админ правит матрицу ролей на лету, Sprint 29) — перечитываем
+// /auth/me, чтобы UI скрыл то, на что прав больше нет. Ошибки глотаем: 401 от /me обработает
+// следующий же обычный запрос (refresh → logout), здесь не наша забота.
+function reloadMe(): Promise<void> {
+  if (!reloadMeInFlight) {
+    reloadMeInFlight = rawRequest<MeResponse>("/auth/me")
+      .then((me) => authStore.setSession(me))
+      .catch(() => undefined)
+      .finally(() => {
+        reloadMeInFlight = null;
+      });
+  }
+  return reloadMeInFlight;
+}
+
 // Рекомендованная бэкендом логика: на 401 (кроме /auth/*) — один раз попробовать /auth/refresh,
 // при успехе повторить исходный запрос (кука уже новая — браузер приложит её сам); при неудаче —
 // ошибка всплывает как обычно (authStore уже очищен внутри refreshSession, AppRoutes сама
-// переключит на /login).
+// переключит на /login). На 403 — ошибка всплывает как есть, плюс фоновое перечитывание /me.
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   try {
     return await rawRequest<T>(path, options);
   } catch (err) {
     const isPublic = path.startsWith(PUBLIC_PATH_PREFIX);
-    if (err instanceof ApiError && err.status === 401 && !isPublic) {
-      const refreshed = await refreshSession();
-      if (refreshed) return rawRequest<T>(path, options);
+    if (err instanceof ApiError && !isPublic) {
+      if (err.status === 401) {
+        const refreshed = await refreshSession();
+        if (refreshed) return rawRequest<T>(path, options);
+      } else if (err.status === 403) {
+        void reloadMe();
+      }
     }
     throw err;
   }
