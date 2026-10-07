@@ -32,6 +32,20 @@
   gap: 14px;
 }
 
+.runs-list-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.runs-list-pager-info {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
 @media (max-width: 480px) {
   .runs-list-toolbar h1 {
     font-size: 22px;

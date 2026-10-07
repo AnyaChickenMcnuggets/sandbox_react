@@ -108,15 +108,32 @@ export interface StepRunResponse {
   errorMessage: string | null;
 }
 
-export interface RunResponse {
+export interface RunResponse extends RunSummaryResponse {
+  steps: StepRunResponse[];
+}
+
+// Строка GET /runs — без steps, чтобы список не грузил шаги каждого прогона.
+export interface RunSummaryResponse {
   id: number;
   scenarioId: number;
+  // Снимок имени на момент запуска — переживает удаление сценария.
+  scenarioName: string;
+  // Логин из аутентификации (не из тела запроса, см. RunRequest).
+  triggeredBy: string;
   status: RunStatus;
   startedAt: string | null; // OffsetDateTime
   finishedAt: string | null; // OffsetDateTime
   // Не null, если прогон запущен не с корней DAG, а с конкретного шага (см. RunRequest.startStepId).
   startStepId: number | null;
-  steps: StepRunResponse[];
+}
+
+// Page начинается с 0.
+export interface PageResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
 }
 
 export interface CleanupResponse {

@@ -12,6 +12,7 @@ import {
 import { useScenario } from "../queries/scenarioQueries";
 import { useCreateScenario, useUpdateScenario } from "../queries/scenarioMutations";
 import { useStartRun } from "../queries/runMutations";
+import { useLastRun } from "../queries/runQueries";
 import type { ScenarioStepType } from "../api/types";
 import type { StepNodeData } from "../graph/types";
 import { ScenarioGraph } from "../graph/ScenarioGraph";
@@ -26,7 +27,6 @@ import { ConfigPanel } from "../features/scenarioEditor/ConfigPanel/ConfigPanel"
 import { ErrorBanner } from "../components/feedback/ErrorBanner";
 import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
 import { toastStore } from "../components/feedback/toastStore";
-import { runHistory } from "../lib/runHistory";
 import { usePermission } from "../lib/authStore";
 import { countStepsWithoutTimeout, formatNoTimeoutWarning } from "../lib/scenarioTimeouts";
 import "./scenarioEditorPage.css";
@@ -200,15 +200,7 @@ export function ScenarioEditorPage() {
     startRun.mutate(
       { scenarioId, request: startStepId !== undefined ? { startStepId } : undefined },
       {
-        onSuccess: (run) => {
-          runHistory.record({
-            runId: run.id,
-            scenarioId,
-            scenarioName: name.trim() || "Без названия",
-            startedAt: new Date().toISOString(),
-          });
-          navigate(`/runs/${run.id}`);
-        },
+        onSuccess: (run) => navigate(`/runs/${run.id}`),
       },
     );
   }
@@ -251,10 +243,9 @@ export function ScenarioEditorPage() {
     : "";
 
   const isSaving = createScenario.isPending || updateScenario.isPending;
-  // Последний запуск ЭТОГО сценария (успешный, ещё выполняющийся — без разницы) — тот же локальный
-  // журнал, что уже используется на ScenarioCard в списке сценариев, здесь просто вторая точка входа
-  // к нему прямо из редактора.
-  const lastRun = scenarioId !== undefined ? runHistory.lastForScenario(scenarioId) : undefined;
+  // Последний запуск ЭТОГО сценария (чей угодно, любой статус) — тот же useLastRun, что и на
+  // ScenarioCard в списке сценариев.
+  const lastRun = useLastRun(scenarioId, canReadRuns);
 
   return (
     <div className="editor-page">
@@ -268,7 +259,7 @@ export function ScenarioEditorPage() {
         nameError={nameError}
         onRun={canRun && scenarioId ? () => requestRun() : undefined}
         isStarting={startRun.isPending}
-        onOpenLastRun={lastRun && canReadRuns ? () => navigate(`/runs/${lastRun.runId}`) : undefined}
+        onOpenLastRun={lastRun ? () => navigate(`/runs/${lastRun.id}`) : undefined}
       />
 
       {scenarioId && scenarioQuery.error ? <ErrorBanner error={scenarioQuery.error} title="Не удалось загрузить сценарий" /> : null}

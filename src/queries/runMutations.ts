@@ -10,6 +10,7 @@ export function useStartRun() {
     mutationFn: (vars: { scenarioId: number; request?: RunRequest }) => startRun(vars.scenarioId, vars.request),
     onSuccess: (run) => {
       queryClient.setQueryData(queryKeys.run(run.id), run);
+      queryClient.invalidateQueries({ queryKey: queryKeys.runsList });
     },
   });
 }

@@ -18,13 +18,10 @@ const STATUS_TONE: Record<RunResponse["status"], "neutral" | "warning" | "succes
 };
 
 interface RunHeaderProps {
-  // Уже разрешённая строка (имя сценария/"Загрузка…"/"Сценарий недоступен") — резолвится в
-  // RunMonitorPage, у которого есть доступ к состоянию отдельного запроса сценария (см. там же).
-  scenarioName: string;
   run: RunResponse;
 }
 
-export function RunHeader({ scenarioName, run }: RunHeaderProps) {
+export function RunHeader({ run }: RunHeaderProps) {
   const navigate = useNavigate();
 
   // startStepId — запуск не с корней DAG, а с конкретного шага ("Запустить отсюда" в редакторе);
@@ -47,12 +44,12 @@ export function RunHeader({ scenarioName, run }: RunHeaderProps) {
             <IconEdit width={15} height={15} />
           </JellyButton>
           <div>
-            <div className="run-header-title">{scenarioName}</div>
-            {/* Запуск — не именованная сущность (нет поля "название" на RunResponse), поэтому вместо
-                технического "Прогон #N" — либо повод старта с конкретного шага, либо ничего лишнего:
-                время старта и так есть в таймлайне ниже. */}
+            <div className="run-header-title">{run.scenarioName}</div>
+            {/* Запуск — не именованная сущность, поэтому вместо технического "Прогон #N" — кто
+                запустил и, если не с корней DAG, с какого шага; время старта есть в таймлайне ниже. */}
             <div className="run-header-subtitle">
-              {run.startStepId != null ? `Запущено с шага «${startStep?.stepName ?? "неизвестного"}»` : "Запуск сценария"}
+              Запустил {run.triggeredBy}
+              {run.startStepId != null ? ` · с шага «${startStep?.stepName ?? "неизвестного"}»` : ""}
             </div>
           </div>
         </div>

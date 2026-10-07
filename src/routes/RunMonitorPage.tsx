@@ -78,15 +78,9 @@ export function RunMonitorPage() {
     return <div className="run-monitor-page">Загрузка…</div>;
   }
 
-  // RunResponse отдаёт только scenarioId, не имя — имя тянем отдельным запросом (useScenario), а
-  // пока он не готов или сценарий уже удалён, показываем не сырой id, а понятный текст-заглушку.
-  // TODO(backend): если бы RunResponse сразу отдавал scenarioName, эта отдельная загрузка (и риск
-  // навсегда потерять имя удалённого сценария) была бы не нужна — см. заметку в чате про бэкенд-промпт.
-  const scenarioLabel = scenarioQuery.data?.name ?? (scenarioQuery.isLoading ? "Загрузка…" : "Сценарий недоступен");
-
   return (
     <div className="run-monitor-page">
-      <RunHeader scenarioName={scenarioLabel} run={runQuery.data} />
+      <RunHeader run={runQuery.data} />
       <RunControls
         status={runQuery.data.status}
         onStop={canStop ? handleStop : undefined}

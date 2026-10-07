@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import type { RunHistoryEntry } from "../../lib/runHistory";
-import { useRun } from "../../queries/runQueries";
+import type { RunSummaryResponse } from "../../api/types";
 import { Blob } from "../../components/jelly/Blob";
 import { JellyBadge } from "../../components/jelly/JellyBadge";
 import { RUN_STATUS_LABELS } from "../../lib/runStatus";
@@ -17,33 +16,25 @@ const STATUS_TONE: Record<string, "neutral" | "warning" | "success" | "danger"> 
 };
 
 interface RunHistoryRowProps {
-  entry: RunHistoryEntry;
+  run: RunSummaryResponse;
 }
 
-export function RunHistoryRow({ entry }: RunHistoryRowProps) {
+export function RunHistoryRow({ run }: RunHistoryRowProps) {
   const navigate = useNavigate();
-  const { data: run, isLoading, error } = useRun(entry.runId);
-
-  // Запуск недоступен (например, бэкенд его больше не знает — не 404 сам по себе показываем
-  // пользователю, а просто убираем строку из журнала: локальная история в localStorage может
-  // пережить сам запуск на бэкенде, показывать в списке заведомо неоткрываемую строку бессмысленно).
-  if (error) return null;
 
   return (
     <motion.div layout whileHover={{ scale: 1.012, x: 4 }} transition={{ type: "spring", stiffness: 300, damping: 11 }}>
-      <Blob radius="md" glass className="run-history-row" onClick={() => navigate(`/runs/${entry.runId}`)}>
+      <Blob radius="md" glass className="run-history-row" onClick={() => navigate(`/runs/${run.id}`)}>
         <div className="run-history-row-main">
-          <div className="run-history-row-title">{entry.scenarioName}</div>
+          <div className="run-history-row-title">{run.scenarioName}</div>
           {/* Запуск — не именованная сущность в бэкенде (нет поля "название"), поэтому вместо
-              технического "#42" показываем время запуска — оно уникально идентифицирует строку
-              для человека не хуже номера. */}
-          <div className="run-history-row-meta">Запущен {formatDateTime(entry.startedAt)}</div>
+              технического "#42" показываем время запуска и автора. startedAt null — PENDING, ещё не
+              стартовал. */}
+          <div className="run-history-row-meta">
+            {run.startedAt ? `Запущен ${formatDateTime(run.startedAt)}` : "Ожидает старта"} · {run.triggeredBy}
+          </div>
         </div>
-        {isLoading ? (
-          <JellyBadge tone="neutral">…</JellyBadge>
-        ) : run ? (
-          <JellyBadge tone={STATUS_TONE[run.status]}>{RUN_STATUS_LABELS[run.status]}</JellyBadge>
-        ) : null}
+        <JellyBadge tone={STATUS_TONE[run.status]}>{RUN_STATUS_LABELS[run.status]}</JellyBadge>
       </Blob>
     </motion.div>
   );

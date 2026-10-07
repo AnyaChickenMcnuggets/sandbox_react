@@ -1,5 +1,9 @@
 import { apiClient } from "./client";
-import type { QueueItemResponse, RunRequest, RunResponse } from "./types";
+import type { PageResponse, QueueItemResponse, RunRequest, RunResponse, RunSummaryResponse } from "./types";
+
+export function listRuns(params: { scenarioId?: number; page: number; size: number }): Promise<PageResponse<RunSummaryResponse>> {
+  return apiClient.get<PageResponse<RunSummaryResponse>>("/runs", params);
+}
 
 export function startRun(scenarioId: number, request?: RunRequest): Promise<RunResponse> {
   return apiClient.post<RunResponse>(`/scenarios/${scenarioId}/run`, request);

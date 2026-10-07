@@ -31,7 +31,7 @@ Spring Boot backend (localhost:8080, /api/v1/*, за Vite dev-proxy)
 | `/` | `ScenarioListPage` | список сценариев, запуск, удаление |
 | `/scenarios/new` | `ScenarioEditorPage` | создание (POST при первом save) |
 | `/scenarios/:scenarioId/edit` | `ScenarioEditorPage` | редактирование (PUT) |
-| `/runs` | `RunsListPage` | журнал запущенных прогонов (локальный, см. ниже) |
+| `/runs` | `RunsListPage` | список запусков всех пользователей (серверный, см. ниже) |
 | `/runs/:runId` | `RunMonitorPage` | live-мониторинг прогона |
 
 ## API-клиент (`src/api`)
@@ -68,23 +68,16 @@ Spring Boot backend (localhost:8080, /api/v1/*, за Vite dev-proxy)
   поллинг продолжится. Это осознанное поведение: если бэкенд временно недоступен, страница монитора
   сама "оживёт", когда он вернётся, без перезагрузки.
 
-## Локальный журнал прогонов (`src/lib/runHistory.ts`)
+## Список прогонов (`GET /api/v1/runs`)
 
-Бэкенд не даёт эндпоинта "список прогонов" — ни по сценарию, ни глобально (`GET /api/v1/runs/{id}`
-единственный способ узнать о конкретном прогоне, id нужно знать заранее). Чтобы пользователь вообще
-мог вернуться к прогону, который уже запустил — в том числе ещё выполняющемуся — фронт сам ведёт
-журнал в `localStorage` (тот же паттерн, что `layoutStorage.ts`): при каждом успешном
-`useStartRun` (список сценариев и редактор) вызывается `runHistory.record({runId, scenarioId,
-scenarioName, startedAt})`. `RunsListPage` подписан на изменения через `useRunHistory()`
-(`useSyncExternalStore`) и рендерит по строке на прогон (`RunHistoryRow`), каждая строка сама
-поллит свой статус через уже существующий `useRun` — отдельного "списочного" API не потребовалось.
-
-Технический нюанс модуля: `list()`/снимок для `useSyncExternalStore` **обязан** отдавать стабильную
-(`===`) ссылку между вызовами, пока данные не менялись, иначе React уходит в бесконечный ре-рендер
-("getSnapshot should be cached"). Поэтому `runHistory` держит `cachedSnapshot` в памяти и
-пересчитывает его только внутри `persist()` (на `record()`), а не заново на каждый `list()` —
-в отличие от `toastStore.ts`, где массив `toasts` и так переприсваивается только при реальном
-изменении, тут это пришлось сделать явно.
+`RunsListPage` берёт серверный список (`useRuns` в `queries/runQueries.ts`): страницы по 20,
+сортировка по `startedAt` desc, `NULLS FIRST` (ещё не стартовавший `PENDING` — сверху), право
+`RUN_READ`. Видны запуски всех пользователей, в строке — `scenarioName` (снимок на момент запуска,
+переживает удаление сценария) и `triggeredBy`. Список поллится раз в 5с — строки показывают живой
+статус; `RunSummaryResponse` без `steps`, детали — в `GET /runs/{id}` (монитор). Кнопка "Последний
+запуск" на карточке сценария и в редакторе — `useLastRun` (`?scenarioId&page=0&size=1`, без
+поллинга, инвалидируется на `useStartRun`). Раньше был локальный журнал в `localStorage`
+(`runHistory.ts`) — удалён, бэкенд теперь отдаёт список сам.
 
 ## Граф-движок (`src/graph`)
 
@@ -341,7 +334,7 @@ CSS grid карточек: грид ломался, когда нескольк�
 ### Переключатель темы (`lib/theme.ts`)
 
 Три состояния — `system` (по умолчанию, следует `prefers-color-scheme`, как было до этого спринта)
-/ `light` / `dark`. Модульный стор (тот же паттерн, что `toastStore`/`runHistory`) —
+/ `light` / `dark`. Модульный стор (тот же паттерн, что `toastStore`) —
 `themeStore.set(pref)` пишет в `localStorage` (`rpa-theme-preference`) и
 проставляет/снимает атрибут `data-theme` на `document.documentElement`. `tokens.css` был готов к
 этому заранее (см. Sprint 11-12): `:root[data-theme="dark"]` — принудительный тёмный,
@@ -437,6 +430,7 @@ capped `max-width` (`min(2200px, 94vw)` / `min(1400px, 92vw)`) — растян�
 | PUT | `/api/v1/scenarios/{id}` | 200 `ScenarioResponse` | не 201/202; пересоздаёт все шаги (новые id) |
 | DELETE | `/api/v1/scenarios/{id}` | 204 | |
 | POST | `/api/v1/scenarios/{id}/run` | 202 `RunResponse` | тело `{startStepId}` опционально; `triggeredBy` убран (Sprint 26) |
+| GET | `/api/v1/runs` | 200 `PageResponse<RunSummaryResponse>` | `?scenarioId&page&size` (page с 0, size 1–100, по умолч. 20); право `RUN_READ`; поллинг 5с |
 | GET | `/api/v1/runs/{runId}` | 200 `RunResponse` | поллинг 2.5с, авто-стоп на терминальном статусе |
 | POST | `/api/v1/runs/{runId}/stop` | 200 `RunResponse` | идемпотентен для терминальных прогонов |
 | POST | `/api/v1/scenarios/{id}/cleanup` | 200 `{success, failures[]}` | 404, если прогонов не было |

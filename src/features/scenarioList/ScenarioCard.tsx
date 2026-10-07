@@ -8,7 +8,7 @@ import { IconEdit, IconTrash, IconActivity } from "../../components/jelly/icons"
 import { RunLaunchButton } from "../../components/feedback/RunLaunchButton";
 import { formatDateTime } from "../../lib/dates";
 import { STEP_TYPE_LABELS } from "../../lib/runStatus";
-import { runHistory } from "../../lib/runHistory";
+import { useLastRun } from "../../queries/runQueries";
 import { usePermission } from "../../lib/authStore";
 import "./scenarioCard.css";
 
@@ -31,7 +31,8 @@ const TYPE_TONE: Record<string, "job" | "queue" | "queueCheck"> = {
 export function ScenarioCard({ scenario, onRun, onDelete, isStarting, canEdit, canRun, canDelete }: ScenarioCardProps) {
   const navigate = useNavigate();
   const canReadRuns = usePermission("RUN_READ");
-  const lastRun = canReadRuns ? runHistory.lastForScenario(scenario.id) : undefined;
+  const lastRun = useLastRun(scenario.id, canReadRuns);
+  const lastRunLabel = lastRun?.startedAt ? `Последний запуск: ${formatDateTime(lastRun.startedAt)}` : "Последний запуск";
   const stepTypeCounts = scenario.steps.reduce<Record<string, number>>((acc, step) => {
     acc[step.type] = (acc[step.type] ?? 0) + 1;
     return acc;
@@ -61,9 +62,9 @@ export function ScenarioCard({ scenario, onRun, onDelete, isStarting, canEdit, c
               size="sm"
               variant="ghost"
               iconOnly
-              title={`Последний запуск: ${formatDateTime(lastRun.startedAt)}`}
-              aria-label={`Последний запуск: ${formatDateTime(lastRun.startedAt)}`}
-              onClick={() => navigate(`/runs/${lastRun.runId}`)}
+              title={lastRunLabel}
+              aria-label={lastRunLabel}
+              onClick={() => navigate(`/runs/${lastRun.id}`)}
             >
               <IconActivity />
             </JellyButton>
