@@ -37,20 +37,22 @@ export function CreateUserForm() {
         <JellyField label="Логин">
           <JellyInput value={username} onChange={(e) => setUsername(e.target.value)} required />
         </JellyField>
-        <JellyField label="Пароль" hint="Минимум 8 символов">
+        <JellyField label="Пароль">
           <JellyInput
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="минимум 8 символов"
+            autoComplete="new-password"
             minLength={8}
             required
           />
         </JellyField>
         <JellyField label="Роль">
           <JellySelect value={role} onChange={(e) => setRole(e.target.value as UserRole)}>
-            <option value="VIEWER">VIEWER — только просмотр</option>
-            <option value="OPERATOR">OPERATOR — редактирование и запуск</option>
-            <option value="ADMIN">ADMIN — полный доступ</option>
+            <option value="VIEWER">VIEWER</option>
+            <option value="OPERATOR">OPERATOR</option>
+            <option value="ADMIN">ADMIN</option>
           </JellySelect>
         </JellyField>
         <JellyButton type="submit" className="create-user-form-submit" disabled={createUser.isPending}>

@@ -22,6 +22,8 @@ interface EditorHeaderProps {
   // Переход к последнему запуску ЭТОГО сценария (успешному или ещё выполняющемуся — без разницы) —
   // есть, только если такой запуск уже когда-то был зафиксирован в локальном журнале (runHistory).
   onOpenLastRun?: () => void;
+  // Массовая подстановка референса в QUEUE/QUEUE_CHECK — только при праве редактирования.
+  onApplyReference?: (reference: string) => void;
 }
 
 export function EditorHeader({
@@ -35,7 +37,9 @@ export function EditorHeader({
   onRun,
   isStarting,
   onOpenLastRun,
+  onApplyReference,
 }: EditorHeaderProps) {
+  const [reference, setReference] = useState("");
   // Название/описание редактируются раз в синюю луну (в отличие от конфига шагов) — два больших
   // поля были всегда развёрнуты и отъедали высоту у холста без пользы большую часть времени.
   // Всегда свёрнуто по умолчанию, даже для нового безымянного сценария — клик по заголовку
@@ -120,6 +124,27 @@ export function EditorHeader({
           ) : null}
         </div>
       </div>
+
+      {onApplyReference ? (
+        <form
+          className="editor-header-reference"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (reference.trim()) onApplyReference(reference.trim());
+          }}
+        >
+          <JellyInput
+            className="editor-header-reference-input"
+            placeholder="Общий референс сценария"
+            aria-label="Общий референс сценария"
+            value={reference}
+            onChange={(e) => setReference(e.target.value)}
+          />
+          <JellyButton type="submit" size="sm" variant="secondary" disabled={!reference.trim()}>
+            Подставить во все шаги
+          </JellyButton>
+        </form>
+      ) : null}
 
       <div className="editor-header-hint">
         Расположение блоков сохраняется локально в этом браузере · клик по связи + Backspace/Delete —

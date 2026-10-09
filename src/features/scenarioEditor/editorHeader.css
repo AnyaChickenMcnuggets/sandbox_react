@@ -27,6 +27,20 @@
   color: var(--text-secondary);
 }
 
+.editor-header-reference {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.editor-header-reference-input {
+  flex: 0 1 280px;
+  min-width: 160px;
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
 .editor-header-fields {
   flex: 1;
   min-width: 0;

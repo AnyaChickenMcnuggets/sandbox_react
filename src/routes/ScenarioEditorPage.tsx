@@ -22,6 +22,7 @@ import { toScenarioRequest, zipStepIdsWithPositions } from "../graph/mapping/toS
 import { defaultConfigForType, DEFAULT_STEP_NAME } from "../graph/mapping/stepConfigDefaults";
 import { replaceLayout } from "../graph/layout/layoutStorage";
 import { EditorHeader } from "../features/scenarioEditor/EditorHeader";
+import { applyScenarioReference, countReferenceImpact } from "../features/scenarioEditor/applyReference";
 import { StepPalette } from "../features/scenarioEditor/StepPalette";
 import { ConfigPanel } from "../features/scenarioEditor/ConfigPanel/ConfigPanel";
 import { ErrorBanner } from "../components/feedback/ErrorBanner";
@@ -242,6 +243,19 @@ export function ScenarioEditorPage() {
         .join("\n\n")
     : "";
 
+  const [pendingReference, setPendingReference] = useState<string | null>(null);
+  const referenceImpact = countReferenceImpact(nodes);
+
+  function handleConfirmReference() {
+    if (!pendingReference) return;
+    setNodes((nds) => applyScenarioReference(nds, pendingReference));
+    // Открытая форма конфига держит собственную копию значений (источник истины, пока панель
+    // открыта) — закрываем панель, иначе её следующее изменение перезатрёт подставленный референс.
+    setSelectedNodeId(null);
+    toastStore.pushSuccess(`Референс «${pendingReference}» подставлен — сохраните сценарий`);
+    setPendingReference(null);
+  }
+
   const isSaving = createScenario.isPending || updateScenario.isPending;
   // Последний запуск ЭТОГО сценария (чей угодно, любой статус) — тот же useLastRun, что и на
   // ScenarioCard в списке сценариев.
@@ -260,6 +274,7 @@ export function ScenarioEditorPage() {
         onRun={canRun && scenarioId ? () => requestRun() : undefined}
         isStarting={startRun.isPending}
         onOpenLastRun={lastRun ? () => navigate(`/runs/${lastRun.id}`) : undefined}
+        onApplyReference={canEdit ? setPendingReference : undefined}
       />
 
       {scenarioId && scenarioQuery.error ? <ErrorBanner error={scenarioQuery.error} title="Не удалось загрузить сценарий" /> : null}
@@ -294,6 +309,22 @@ export function ScenarioEditorPage() {
           />
         ) : null}
       </div>
+
+      <ConfirmDialog
+        open={pendingReference !== null}
+        title="Подставить референс?"
+        message={
+          pendingReference
+            ? referenceImpact.transactions === 0 && referenceImpact.checks === 0
+              ? "В сценарии нет шагов QUEUE с транзакциями и шагов QUEUE_CHECK — подставлять некуда."
+              : `Транзакции QUEUE (${referenceImpact.transactions}) получат naturalKey «${pendingReference}-1», «${pendingReference}-2»… (нумерация внутри шага). Проверки QUEUE_CHECK (${referenceImpact.checks}) будут искать по префиксу «${pendingReference}». Прежние naturalKey этих шагов будут перезаписаны.`
+            : ""
+        }
+        confirmLabel="Подставить"
+        danger={false}
+        onConfirm={handleConfirmReference}
+        onCancel={() => setPendingReference(null)}
+      />
 
       <ConfirmDialog
         open={pendingRun !== null}

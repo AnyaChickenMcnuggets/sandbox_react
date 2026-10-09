@@ -4,8 +4,9 @@ import type { RunResponse } from "../../api/types";
 import { JellyPanel } from "../../components/jelly/JellyPanel";
 import { JellyBadge } from "../../components/jelly/JellyBadge";
 import { JellyButton } from "../../components/jelly/JellyButton";
-import { IconEdit } from "../../components/jelly/icons";
-import { RUN_STATUS_LABELS } from "../../lib/runStatus";
+import { IconEdit, IconReport } from "../../components/jelly/icons";
+import { runReportUrl } from "../../lib/runReport";
+import { RUN_STATUS_LABELS, isTerminalStatus } from "../../lib/runStatus";
 import { formatDuration, formatTime } from "../../lib/dates";
 import "./runHeader.css";
 
@@ -53,11 +54,24 @@ export function RunHeader({ run }: RunHeaderProps) {
             </div>
           </div>
         </div>
-        <motion.div key={run.status} initial={{ scale: 0.7 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 16 }}>
-          <JellyBadge tone={STATUS_TONE[run.status]} className="run-header-status">
-            {RUN_STATUS_LABELS[run.status]}
-          </JellyBadge>
-        </motion.div>
+        <div className="run-header-right">
+          {isTerminalStatus(run.status) ? (
+            <JellyButton
+              size="sm"
+              variant="secondary"
+              title="Открыть отчёт в новой вкладке (печать → PDF)"
+              onClick={() => window.open(runReportUrl(run.id), "_blank", "noopener")}
+            >
+              <IconReport width={15} height={15} />
+              Отчёт
+            </JellyButton>
+          ) : null}
+          <motion.div key={run.status} initial={{ scale: 0.7 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 16 }}>
+            <JellyBadge tone={STATUS_TONE[run.status]} className="run-header-status">
+              {RUN_STATUS_LABELS[run.status]}
+            </JellyBadge>
+          </motion.div>
+        </div>
       </div>
       <div className="run-header-timeline">
         <span>Старт: {formatTime(run.startedAt)}</span>

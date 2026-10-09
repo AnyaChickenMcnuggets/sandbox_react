@@ -1,20 +1,29 @@
 .create-user-form {
-  max-width: 360px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .create-user-form-title {
   font-weight: 900;
-  font-size: 16px;
-  margin-bottom: 12px;
+  font-size: 14px;
+  margin-bottom: 8px;
 }
 
 .create-user-form-fields {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.create-user-form-fields .jelly-field {
+  flex: 1 1 160px;
+  margin-bottom: 0;
+  gap: 4px;
 }
 
 .create-user-form-submit {
-  width: 100%;
-  margin-top: 4px;
+  flex: 0 0 auto;
 }
