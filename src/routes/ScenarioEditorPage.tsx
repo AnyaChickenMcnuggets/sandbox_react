@@ -55,6 +55,7 @@ export function ScenarioEditorPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [sendReportByMail, setSendReportByMail] = useState(false);
   const [configPanelWidth, setConfigPanelWidth] = useState(340);
   const [nameError, setNameError] = useState<string | undefined>();
   const [loadedScenarioId, setLoadedScenarioId] = useState<number | undefined>(undefined);
@@ -198,8 +199,12 @@ export function ScenarioEditorPage() {
 
   function handleRun(startStepId?: number) {
     if (!scenarioId) return;
+    const request = {
+      ...(startStepId !== undefined ? { startStepId } : {}),
+      ...(sendReportByMail ? { sendReportByMail: true } : {}),
+    };
     startRun.mutate(
-      { scenarioId, request: startStepId !== undefined ? { startStepId } : undefined },
+      { scenarioId, request: Object.keys(request).length > 0 ? request : undefined },
       {
         onSuccess: (run) => navigate(`/runs/${run.id}`),
       },
@@ -273,6 +278,8 @@ export function ScenarioEditorPage() {
         nameError={nameError}
         onRun={canRun && scenarioId ? () => requestRun() : undefined}
         isStarting={startRun.isPending}
+        sendReportByMail={sendReportByMail}
+        onChangeSendReportByMail={setSendReportByMail}
         onOpenLastRun={lastRun ? () => navigate(`/runs/${lastRun.id}`) : undefined}
         onApplyReference={canEdit ? setPendingReference : undefined}
       />

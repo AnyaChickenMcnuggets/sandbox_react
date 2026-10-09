@@ -429,10 +429,11 @@ capped `max-width` (`min(2200px, 94vw)` / `min(1400px, 92vw)`) — растян�
 | GET | `/api/v1/scenarios/{id}` | 200 `ScenarioResponse` | |
 | PUT | `/api/v1/scenarios/{id}` | 200 `ScenarioResponse` | не 201/202; пересоздаёт все шаги (новые id) |
 | DELETE | `/api/v1/scenarios/{id}` | 204 | |
-| POST | `/api/v1/scenarios/{id}/run` | 202 `RunResponse` | тело `{startStepId}` опционально; `triggeredBy` убран (Sprint 26) |
+| POST | `/api/v1/scenarios/{id}/run` | 202 `RunResponse` | тело `{startStepId, sendReportByMail}` опционально (`sendReportByMail:true` при выключенной почте → 400); `triggeredBy` убран (Sprint 26) |
 | GET | `/api/v1/runs` | 200 `PageResponse<RunSummaryResponse>` | `?scenarioId&page&size` (page с 0, size 1–100, по умолч. 20); право `RUN_READ`; поллинг 5с |
 | GET | `/api/v1/runs/{runId}` | 200 `RunResponse` | поллинг 2.5с, авто-стоп на терминальном статусе |
 | GET | `/api/v1/runs/{runId}/report` | HTML (`?format=json` — данные) | право `RUN_READ`; 409 пока выполняется; только ссылкой в новой вкладке (iframe/innerHTML запрещены), печать → PDF; кнопка "Отчёт" в `RunHeader` для терминальных статусов |
+| GET | `/api/v1/report/settings` | 200 `{mailAvailable}` | любая роль; тумблер "Отчёт на почту" (`MailReportToggle`) виден только при `true` |
 | POST | `/api/v1/runs/{runId}/stop` | 200 `RunResponse` | идемпотентен для терминальных прогонов |
 | POST | `/api/v1/scenarios/{id}/cleanup` | 200 `{success, failures[]}` | 404, если прогонов не было |
 | GET | `/api/v1/runs/{runId}/steps/{stepId}/queue-items` | 200 `QueueItemResponse[]` | `?pageNumber&pageSize` |

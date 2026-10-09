@@ -88,6 +88,13 @@ export interface RunRequest {
   // конца прогона (движок их не трогает). Фронт не валидирует принадлежность/существование шага —
   // это делает бэкенд (404/400), фронт только явно предупреждает пользователя перед запуском.
   startStepId?: number | null;
+  // Письмо о завершении тому, кто запустил. По умолчанию не шлётся; true при выключенной на сервере
+  // отправке — 400 INVALID_REQUEST, прогон не создаётся (см. ReportSettingsResponse.mailAvailable).
+  sendReportByMail?: boolean;
+}
+
+export interface ReportSettingsResponse {
+  mailAvailable: boolean;
 }
 
 export interface StepRunResponse {

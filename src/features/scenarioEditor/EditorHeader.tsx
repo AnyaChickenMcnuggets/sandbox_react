@@ -5,6 +5,7 @@ import { JellyButton } from "../../components/jelly/JellyButton";
 import { IconActivity, IconSave } from "../../components/jelly/icons";
 import { RobotsAvailabilityIndicator } from "../../components/feedback/RobotsAvailabilityIndicator";
 import { RunLaunchButton } from "../../components/feedback/RunLaunchButton";
+import { MailReportToggle } from "../../components/feedback/MailReportToggle";
 import "./editorHeader.css";
 
 interface EditorHeaderProps {
@@ -19,6 +20,8 @@ interface EditorHeaderProps {
   // Запуск возможен только у уже сохранённого сценария (нужен scenarioId) — см. ScenarioEditorPage.
   onRun?: () => void;
   isStarting: boolean;
+  sendReportByMail: boolean;
+  onChangeSendReportByMail: (value: boolean) => void;
   // Переход к последнему запуску ЭТОГО сценария (успешному или ещё выполняющемуся — без разницы) —
   // есть, только если такой запуск уже когда-то был зафиксирован в локальном журнале (runHistory).
   onOpenLastRun?: () => void;
@@ -36,6 +39,8 @@ export function EditorHeader({
   nameError,
   onRun,
   isStarting,
+  sendReportByMail,
+  onChangeSendReportByMail,
   onOpenLastRun,
   onApplyReference,
 }: EditorHeaderProps) {
@@ -118,6 +123,7 @@ export function EditorHeader({
           ) : null}
           {onRun ? (
             <>
+              <MailReportToggle checked={sendReportByMail} onChange={onChangeSendReportByMail} />
               <RobotsAvailabilityIndicator />
               <RunLaunchButton isStarting={isStarting} onClick={onRun} />
             </>

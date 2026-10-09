@@ -10,6 +10,7 @@ import { JellyButton } from "../components/jelly/JellyButton";
 import { ErrorBanner } from "../components/feedback/ErrorBanner";
 import { RobotsAvailabilityIndicator } from "../components/feedback/RobotsAvailabilityIndicator";
 import { ConfirmDialog } from "../components/feedback/ConfirmDialog";
+import { MailReportToggle } from "../components/feedback/MailReportToggle";
 import { toastStore } from "../components/feedback/toastStore";
 import { usePermission } from "../lib/authStore";
 import { countStepsWithoutTimeout, formatNoTimeoutWarning } from "../lib/scenarioTimeouts";
@@ -22,6 +23,7 @@ export function ScenarioListPage() {
   const startRun = useStartRun();
   const [pendingDelete, setPendingDelete] = useState<ScenarioResponse | null>(null);
   const [pendingRun, setPendingRun] = useState<{ scenario: ScenarioResponse; missingTimeouts: number } | null>(null);
+  const [sendReportByMail, setSendReportByMail] = useState(false);
   const canEdit = usePermission("SCENARIO_WRITE");
   const canRun = usePermission("RUN_START");
   const canDelete = usePermission("SCENARIO_DELETE");
@@ -45,7 +47,7 @@ export function ScenarioListPage() {
 
   function handleRun(scenario: ScenarioResponse) {
     startRun.mutate(
-      { scenarioId: scenario.id },
+      { scenarioId: scenario.id, request: sendReportByMail ? { sendReportByMail: true } : undefined },
       {
         onSuccess: (run) => navigate(`/runs/${run.id}`),
       },
@@ -69,6 +71,7 @@ export function ScenarioListPage() {
           <p className="scenario-list-subtitle">DAG-сценарии тестирования RPA-процессов</p>
         </div>
         <div className="scenario-list-toolbar-actions">
+          {canRun ? <MailReportToggle checked={sendReportByMail} onChange={setSendReportByMail} /> : null}
           <RobotsAvailabilityIndicator />
           {canEdit ? <JellyButton onClick={() => navigate("/scenarios/new")}>+ Новый сценарий</JellyButton> : null}
         </div>
