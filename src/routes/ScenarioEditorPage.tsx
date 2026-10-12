@@ -324,7 +324,7 @@ export function ScenarioEditorPage() {
           pendingReference
             ? referenceImpact.transactions === 0 && referenceImpact.checks === 0
               ? "В сценарии нет шагов QUEUE с транзакциями и шагов QUEUE_CHECK — подставлять некуда."
-              : `Транзакции QUEUE (${referenceImpact.transactions}) получат naturalKey «${pendingReference}-1», «${pendingReference}-2»… (нумерация внутри шага). Проверки QUEUE_CHECK (${referenceImpact.checks}) будут искать по префиксу «${pendingReference}». Прежние naturalKey этих шагов будут перезаписаны.`
+              : `naturalKey «${pendingReference}» будет записан в транзакции QUEUE (${referenceImpact.transactions}) и в проверки QUEUE_CHECK (${referenceImpact.checks}). Прежние naturalKey этих шагов будут перезаписаны.`
             : ""
         }
         confirmLabel="Подставить"
